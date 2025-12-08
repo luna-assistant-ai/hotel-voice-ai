@@ -11,14 +11,27 @@ A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. T
 - **📊 Volume Meter**: Visual feedback of microphone input
 - **💾 Data Persistence**: Simple JSON-based database for storing bookings
 - **🎨 Modern UI**: Beautiful, responsive interface with real-time status updates
+- **🔒 Security Controls**: Origin verification, rate limiting, connection tracking
+- **✅ Data Validation**: Strict date validation, capacity checks, NaN prevention
+- **📊 Inventory Management**: Room availability tracking with overbooking prevention
 
 ## 🏗️ Architecture
 
 ### Backend (Node.js + Express)
 - **WebSocket Relay**: Connects client to OpenAI Realtime API
-- **Booking Management**: CRUD operations for hotel reservations
-- **Function Calling**: Implements OpenAI function calling for booking actions
-- **Audio Processing**: Handles PCM16 audio streaming
+  - Origin verification (same-origin + localhost only)
+  - IP-based rate limiting (10 connections/min, max 3 concurrent)
+  - Automatic connection tracking and cleanup
+- **Booking Management**: CRUD operations with validation
+  - Strict date validation (NaN checks, range validation)
+  - Inventory tracking per room type
+  - Overbooking prevention with overlap detection
+  - Synchronous I/O operations (readFileSync/writeFileSync)
+- **Function Calling**: OpenAI function tools integration
+  - Initial response trigger (session.updated event)
+  - Real-time availability checking against bookings
+  - Automatic error handling and recovery
+- **Audio Processing**: Handles PCM16 audio streaming at 24kHz
 
 ### Frontend (Vanilla JavaScript)
 - **Web Audio API**: Captures and processes microphone input
@@ -108,12 +121,12 @@ The AI assistant can handle:
 
 ## 🏨 Room Types
 
-| Room Type | Price (NZD) | Capacity | Features |
-|-----------|-------------|----------|----------|
-| Standard Room | $180/night | 2 guests | Queen bed, City view |
-| Deluxe Room | $280/night | 3 guests | King bed, Harbor view |
-| Executive Suite | $450/night | 4 guests | Separate living area, Panoramic views |
-| Penthouse Suite | $850/night | 6 guests | Multiple rooms, 360° views, Butler service |
+| Room Type | Price (NZD) | Capacity | Inventory | Features |
+|-----------|-------------|----------|-----------|----------|
+| Standard Room | $180/night | 2 guests | 20 rooms | Queen bed, City view |
+| Deluxe Room | $280/night | 3 guests | 15 rooms | King bed, Harbor view |
+| Executive Suite | $450/night | 4 guests | 8 rooms | Separate living area, Panoramic views |
+| Penthouse Suite | $850/night | 6 guests | 2 rooms | Multiple rooms, 360° views, Butler service |
 
 ## 🗂️ Project Structure
 
@@ -174,7 +187,18 @@ Checks room availability.
 
 ## 💾 Data Storage
 
-Bookings are stored in `database.json` with the following structure:
+### Current Implementation
+
+Bookings are stored in `server/database.json` using synchronous file operations.
+
+**Technical Details:**
+- **Location**: `server/database.json` (absolute path)
+- **Format**: JSON with pretty-print formatting
+- **I/O**: Synchronous (`readFileSync`/`writeFileSync`)
+- **Initialization**: Automatic creation if file doesn't exist
+- **Validation**: All writes include error handling
+
+**Structure:**
 
 ```json
 {
@@ -200,6 +224,54 @@ Bookings are stored in `database.json` with the following structure:
 }
 ```
 
+### Limitations (Demo Only)
+
+⚠️ **Current JSON storage has limitations:**
+- ❌ No concurrent write protection (race conditions possible)
+- ❌ No transactions (partial writes on crash)
+- ❌ Event loop blocking on large files (synchronous I/O)
+- ❌ No built-in backup/restore
+- ❌ Limited query capabilities
+
+### Production Recommendations
+
+For production use, migrate to a proper database:
+
+**PostgreSQL** (Recommended):
+```javascript
+// Example with node-postgres
+import pg from 'pg';
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL
+});
+
+export async function createBooking(data) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Transactional booking creation
+    const result = await client.query(
+      'INSERT INTO bookings (...) VALUES (...) RETURNING *',
+      [...]
+    );
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+```
+
+**Benefits:**
+- ✅ ACID transactions
+- ✅ Concurrent access handling
+- ✅ Advanced queries and indexes
+- ✅ Built-in backup and replication
+- ✅ Connection pooling
+
 ## 🎨 Customization
 
 ### Modify Hotel Information
@@ -221,19 +293,45 @@ voice: 'alloy' // Options: alloy, echo, shimmer
 
 Modify the `getSystemInstructions()` function in `server/realtime-handler.js` to change how the AI behaves.
 
-## 🔒 Security Notes
+## 🔒 Security & Validation
 
-This is a **demo application**. For production use:
+### ✅ Already Implemented
 
-- ✅ Add user authentication
-- ✅ Implement rate limiting
-- ✅ Use a proper database (PostgreSQL, MongoDB)
-- ✅ Add input validation and sanitization
-- ✅ Implement payment processing
-- ✅ Add booking confirmation emails
-- ✅ Use HTTPS for all connections
-- ✅ Secure API keys with proper secret management
-- ✅ Add error tracking and monitoring
+**WebSocket Security:**
+- ✅ Origin verification (same-origin policy + localhost)
+- ✅ IP-based rate limiting (10 connections per minute)
+- ✅ Concurrent connection limits (max 3 per IP)
+- ✅ Automatic connection tracking and cleanup
+- ✅ Graceful error handling and disconnection
+
+**Data Validation:**
+- ✅ Date validation (NaN checks, range verification)
+- ✅ Guest capacity validation against room limits
+- ✅ Room type validation
+- ✅ Booking overlap detection
+- ✅ Inventory tracking and overbooking prevention
+
+**Database:**
+- ✅ Absolute path resolution (works from any directory)
+- ✅ Automatic database initialization
+- ✅ Error handling with fallbacks
+
+### ⚠️ Required for Production
+
+This is a **demo application**. For production deployment, you must add:
+
+- 🔐 User authentication and authorization
+- 💳 Payment processing integration
+- 📧 Email confirmation system
+- 🗄️ Production database (PostgreSQL/MongoDB) with ACID transactions
+- 🔒 HTTPS enforcement (TLS/SSL certificates)
+- 🔑 Secure secret management (AWS Secrets Manager, Vault)
+- 📊 Monitoring and error tracking (Sentry, DataDog)
+- 🔄 Backup and disaster recovery
+- 📝 Audit logging
+- 🛡️ SQL injection prevention (use parameterized queries)
+- 🚦 Advanced rate limiting (distributed, per-user)
+- 🌐 CDN for static assets
 
 ## 🐛 Troubleshooting
 
@@ -241,21 +339,52 @@ This is a **demo application**. For production use:
 - Ensure you've granted microphone permissions
 - Check browser console for errors
 - Try using HTTPS (required for microphone in some browsers)
+- Reload the page and try again
 
 ### Connection Failed
-- Verify your OpenAI API key is correct
-- Check that you have Realtime API access
-- Ensure port 3000 is not in use
+- Verify your OpenAI API key is correct in `.env`
+- Check that you have Realtime API access enabled
+- Ensure port 3000 is not already in use
+- Check firewall settings
+
+### Rate Limit Exceeded
+**Error**: `🚫 Rate limit exceeded for IP`
+- **Cause**: More than 10 connection attempts in 1 minute
+- **Solution**: Wait 60 seconds before reconnecting
+- **Limit**: 10 connections per minute per IP address
+- **Note**: Limit resets automatically after 1 minute
+
+### Too Many Connections
+**Error**: `🚫 Too many concurrent connections`
+- **Cause**: More than 3 simultaneous connections from same IP
+- **Solution**: Close existing connections before opening new ones
+- **Limit**: Maximum 3 concurrent connections per IP
+- **How to fix**: Refresh the page or wait for existing connections to close
+
+### Unauthorized Origin
+**Error**: `🚫 Rejected connection from unauthorized origin`
+- **Cause**: WebSocket connection from non-localhost or different origin
+- **Solution**: Access the app from `http://localhost:3000` directly
+- **Note**: For production, configure allowed origins in `server/index.js`
+- **Reverse proxy**: Ensure Origin/Referer headers are properly forwarded
 
 ### Audio Not Playing
-- Check browser audio settings
+- Check browser audio settings and volume
 - Verify your speakers/headphones are working
 - Look for errors in the browser console
+- Try a different browser (Chrome/Edge recommended)
 
 ### Function Calls Not Working
-- Check server logs for function call details
-- Verify the `database.json` file has write permissions
-- Ensure dates are in correct format (YYYY-MM-DD)
+- Check server console for function call logs
+- Verify `database.json` has write permissions
+- Ensure dates are in YYYY-MM-DD format
+- Check that room type is valid (standard/deluxe/suite/penthouse)
+
+### Booking Validation Errors
+**Invalid dates**: Dates must be in YYYY-MM-DD format and not NaN
+**Check-out before check-in**: Check-out must be after check-in date
+**Room not available**: No inventory for selected dates/room type
+**Exceeds capacity**: Number of guests exceeds room capacity
 
 ## 📝 Development
 
@@ -299,6 +428,33 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 For issues and questions:
 - Open an issue on GitHub
 - Check the troubleshooting section above
+
+## ✨ Recent Improvements (v1.1.0)
+
+### Security Enhancements
+- ✅ **WebSocket Origin Verification**: Prevents unauthorized access from external domains
+- ✅ **IP-based Rate Limiting**: Limits to 10 connections per minute per IP
+- ✅ **Concurrent Connection Control**: Maximum 3 simultaneous connections per IP
+- ✅ **Connection Tracking**: Automatic cleanup and graceful disconnection handling
+
+### Data Validation
+- ✅ **Date Validation**: Strict NaN checks prevent invalid date calculations
+- ✅ **Overbooking Prevention**: Real-time inventory tracking with overlap detection
+- ✅ **Input Sanitization**: Comprehensive validation of all booking parameters
+- ✅ **Error Messages**: Clear, actionable error messages for users
+
+### Bug Fixes
+- ✅ **Fixed async/await bug**: `getAllBookings()` now returns synchronously (was returning Promise)
+- ✅ **Fixed availability check**: Now correctly considers existing bookings
+- ✅ **Fixed database path**: Uses absolute path resolution (works from any directory)
+- ✅ **Fixed first response**: Initial `response.create` trigger ensures AI responds immediately
+
+### Performance
+- ✅ **Synchronous I/O**: Consistent sync operations (removed false async declarations)
+- ✅ **Optimized availability checking**: Efficient overlap detection algorithm
+- ✅ **Connection cleanup**: Automatic timestamp cleanup every 60 seconds
+
+**Commit**: `379b383` (merged into main)
 
 ## 🚀 Future Enhancements
 
