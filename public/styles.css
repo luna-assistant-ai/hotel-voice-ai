@@ -120,6 +120,49 @@ main {
     animation: pulse 1s ease-out infinite;
 }
 
+/* Assistant speaking indicator */
+.status-indicator.speaking .pulse {
+    background: #8b5cf6; /* Purple for AI speaking */
+    animation: pulse-speaking 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-speaking {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.7;
+    }
+}
+
+.status-indicator.speaking::after {
+    content: '🔊 Assistant Speaking';
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(139, 92, 246, 0.9);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    animation: fade-in 0.3s ease-in;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
 #statusText {
     font-size: 1.2rem;
     font-weight: 600;

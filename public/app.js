@@ -12,6 +12,18 @@ class VoiceAssistant {
         this.maxPendingChunks = 2; // Limit buffering to prevent overflow
         this.isSending = false;
 
+        // Audio playback queue for smooth streaming
+        this.audioPlaybackQueue = [];
+        this.nextPlaybackTime = 0;
+        this.isAssistantSpeaking = false;
+
+        // Reconnection logic
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 1000; // Start at 1s
+        this.shouldReconnect = true;
+        this.intentionalDisconnect = false;
+
         // UI Elements
         this.connectBtn = document.getElementById('connectBtn');
         this.disconnectBtn = document.getElementById('disconnectBtn');
@@ -26,22 +38,32 @@ class VoiceAssistant {
         this.disconnectBtn.addEventListener('click', () => this.disconnect());
     }
 
-    async connect() {
+    async connect(isReconnect = false) {
         try {
+            if (!isReconnect) {
+                this.intentionalDisconnect = false;
+                this.shouldReconnect = true;
+                this.reconnectAttempts = 0;
+            }
+
             this.updateStatus('Connecting...', 'connecting');
             this.connectBtn.disabled = true;
 
-            // Get microphone access
-            this.audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }
-            });
+            // Get microphone access (reuse if already granted)
+            if (!this.audioStream) {
+                this.audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+            }
 
-            // Create audio context
-            this.audioContext = new AudioContext({ sampleRate: 24000 });
+            // Create audio context (reuse if exists and not closed)
+            if (!this.audioContext || this.audioContext.state === 'closed') {
+                this.audioContext = new AudioContext({ sampleRate: 24000 });
+            }
 
             // Connect to WebSocket
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -52,27 +74,68 @@ class VoiceAssistant {
             this.ws.onopen = () => this.handleOpen();
             this.ws.onmessage = (event) => this.handleMessage(event);
             this.ws.onerror = (error) => this.handleError(error);
-            this.ws.onclose = () => this.handleClose();
+            this.ws.onclose = (event) => this.handleClose(event);
 
         } catch (error) {
             console.error('Connection error:', error);
-            this.addTranscript('system', 'Failed to connect. Please check your microphone permissions and try again.');
+
+            if (error.name === 'NotAllowedError' || error.name === 'NotFoundError') {
+                this.addTranscript('system', '🎤 Microphone access is required. Please allow microphone permissions and try again.');
+            } else {
+                this.addTranscript('system', '⚠️ Connection failed. Retrying...');
+                this.attemptReconnect();
+            }
+
             this.updateStatus('Connection failed', 'error');
-            this.connectBtn.disabled = false;
+            if (!this.shouldReconnect) {
+                this.connectBtn.disabled = false;
+            }
         }
     }
 
     handleOpen() {
         console.log('Connected to server');
         this.isConnected = true;
+
+        const wasReconnecting = this.reconnectAttempts > 0;
+        this.reconnectAttempts = 0; // Reset reconnect counter on successful connection
+
         this.updateStatus('Connected - Listening...', 'connected');
         this.disconnectBtn.disabled = false;
         this.audioControls.style.display = 'block';
 
-        this.addTranscript('system', '✅ Connected! The AI assistant is ready to help you make a reservation.');
+        if (wasReconnecting) {
+            this.addTranscript('system', '✅ Reconnected successfully!');
+        } else {
+            this.addTranscript('system', '✅ Connected! The AI assistant is ready to help you make a reservation.');
+        }
 
         // Start sending audio
         this.startAudioCapture();
+    }
+
+    attemptReconnect() {
+        if (!this.shouldReconnect || this.intentionalDisconnect) {
+            return;
+        }
+
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+            this.addTranscript('system', '❌ Unable to reconnect. Please refresh the page and try again.');
+            this.updateStatus('Connection lost', 'error');
+            this.connectBtn.disabled = false;
+            return;
+        }
+
+        this.reconnectAttempts++;
+        const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
+
+        this.updateStatus(`Reconnecting in ${Math.round(delay / 1000)}s... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`, 'connecting');
+
+        setTimeout(() => {
+            if (this.shouldReconnect && !this.intentionalDisconnect) {
+                this.connect(true);
+            }
+        }, delay);
     }
 
     async startAudioCapture() {
@@ -155,20 +218,13 @@ class VoiceAssistant {
                 // Convert PCM16 to base64
                 const base64Audio = this.arrayBufferToBase64(chunk.audio);
 
-                // Send append message
+                // Send append message only
+                // OpenAI server_vad handles turn detection and commits automatically
                 const appendMessage = {
                     type: 'input_audio_buffer.append',
                     audio: base64Audio
                 };
                 this.ws.send(JSON.stringify(appendMessage));
-
-                // Send commit if this chunk should trigger one
-                if (chunk.shouldCommit) {
-                    const commitMessage = {
-                        type: 'input_audio_buffer.commit'
-                    };
-                    this.ws.send(JSON.stringify(commitMessage));
-                }
 
                 // Small delay to avoid overwhelming the WebSocket
                 await new Promise(resolve => setTimeout(resolve, 1));
@@ -231,34 +287,51 @@ class VoiceAssistant {
         this.addTranscript('system', '❌ Connection error occurred.');
     }
 
-    handleClose() {
-        console.log('Disconnected from server');
+    handleClose(event) {
+        console.log('Disconnected from server', event);
         this.isConnected = false;
-        this.updateStatus('Disconnected', 'disconnected');
-        this.connectBtn.disabled = false;
         this.disconnectBtn.disabled = true;
         this.audioControls.style.display = 'none';
 
-        this.addTranscript('system', '⚠️ Disconnected from server.');
-
-        // Clean up audio resources
+        // Clean up audio worklet (but keep other resources for reconnection)
         if (this.audioWorkletNode) {
             this.audioWorkletNode.disconnect();
             this.audioWorkletNode = null;
-        }
-        if (this.audioStream) {
-            this.audioStream.getTracks().forEach(track => track.stop());
-        }
-        if (this.audioContext) {
-            this.audioContext.close();
         }
 
         // Clear pending audio chunks
         this.pendingAudioChunks = [];
         this.isSending = false;
+        this.audioPlaybackQueue = [];
+        this.isAssistantSpeaking = false;
+        this.updateAssistantSpeakingIndicator(false);
+
+        if (this.intentionalDisconnect) {
+            // User clicked disconnect
+            this.updateStatus('Disconnected', 'disconnected');
+            this.addTranscript('system', '👋 Disconnected. Thank you for using our service!');
+            this.connectBtn.disabled = false;
+
+            // Full cleanup on intentional disconnect
+            if (this.audioStream) {
+                this.audioStream.getTracks().forEach(track => track.stop());
+                this.audioStream = null;
+            }
+            if (this.audioContext) {
+                this.audioContext.close();
+                this.audioContext = null;
+            }
+        } else {
+            // Unexpected disconnect - attempt reconnection
+            this.addTranscript('system', '⚠️ Connection lost. Reconnecting...');
+            this.attemptReconnect();
+        }
     }
 
     disconnect() {
+        this.intentionalDisconnect = true;
+        this.shouldReconnect = false;
+
         if (this.ws) {
             this.ws.close();
         }
@@ -308,12 +381,56 @@ class VoiceAssistant {
             const audioData = this.base64ToArrayBuffer(base64Audio);
             const audioBuffer = await this.audioContext.decodeAudioData(audioData);
 
+            // Add to queue for smooth playback
+            this.audioPlaybackQueue.push(audioBuffer);
+            this.processAudioPlaybackQueue();
+        } catch (error) {
+            console.error('Error decoding audio:', error);
+        }
+    }
+
+    processAudioPlaybackQueue() {
+        // Process all queued audio chunks
+        while (this.audioPlaybackQueue.length > 0) {
+            const audioBuffer = this.audioPlaybackQueue.shift();
+
+            // Calculate when to play this chunk
+            const currentTime = this.audioContext.currentTime;
+            const playTime = Math.max(currentTime, this.nextPlaybackTime);
+
+            // Create and schedule audio source
             const source = this.audioContext.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(this.audioContext.destination);
-            source.start();
-        } catch (error) {
-            console.error('Error playing audio:', error);
+
+            // Track when assistant starts/stops speaking
+            if (!this.isAssistantSpeaking) {
+                this.isAssistantSpeaking = true;
+                this.updateAssistantSpeakingIndicator(true);
+            }
+
+            source.onended = () => {
+                // Check if more audio is coming
+                setTimeout(() => {
+                    if (this.audioPlaybackQueue.length === 0) {
+                        this.isAssistantSpeaking = false;
+                        this.updateAssistantSpeakingIndicator(false);
+                    }
+                }, 100);
+            };
+
+            source.start(playTime);
+
+            // Update next playback time for gapless playback
+            this.nextPlaybackTime = playTime + audioBuffer.duration;
+        }
+    }
+
+    updateAssistantSpeakingIndicator(isSpeaking) {
+        if (isSpeaking) {
+            this.statusIndicator.classList.add('speaking');
+        } else {
+            this.statusIndicator.classList.remove('speaking');
         }
     }
 

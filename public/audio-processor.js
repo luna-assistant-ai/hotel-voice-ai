@@ -11,10 +11,8 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         this.chunkSize = 720;
         this.buffer = [];
 
-        // Volume detection for commit triggers
-        this.silenceThreshold = 0.01;
-        this.silenceSamples = 0;
-        this.silenceDuration = 480; // ~20ms of silence triggers commit
+        // VAD client disabled - let OpenAI server_vad handle turn detection
+        // This prevents conflicts and ensures smooth conversation flow
 
         // Listen for commands from main thread
         this.port.onmessage = (event) => {
@@ -40,29 +38,17 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < inputChannel.length; i++) {
             this.buffer.push(inputChannel[i]);
 
-            // Track silence for smart commits
-            if (Math.abs(inputChannel[i]) < this.silenceThreshold) {
-                this.silenceSamples++;
-            } else {
-                this.silenceSamples = 0;
-            }
-
             // Buffer full - send chunk
+            // No client-side VAD: OpenAI server_vad handles turn detection
             if (this.buffer.length >= this.chunkSize) {
-                this.sendChunk(false);
-            }
-
-            // Silence detected - commit pending audio
-            if (this.silenceSamples >= this.silenceDuration && this.buffer.length > 0) {
-                this.sendChunk(true);
-                this.silenceSamples = 0;
+                this.sendChunk();
             }
         }
 
         return true;
     }
 
-    sendChunk(shouldCommit) {
+    sendChunk() {
         if (this.buffer.length === 0) return;
 
         // Convert Float32 to PCM16
@@ -73,9 +59,9 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         }
 
         // Send to main thread
+        // No shouldCommit - server_vad handles all turn detection
         this.port.postMessage({
             audio: pcm16.buffer,
-            shouldCommit: shouldCommit,
             sampleCount: pcm16.length
         }, [pcm16.buffer]); // Transfer buffer for efficiency
 
@@ -85,7 +71,7 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
 
     flushBuffer() {
         if (this.buffer.length > 0) {
-            this.sendChunk(true);
+            this.sendChunk();
         }
     }
 }
