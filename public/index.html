@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auckland Grand Hotel - Voice AI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏨 Auckland Grand Hotel</h1>
+            <p class="subtitle">Voice AI Reservation Assistant</p>
+        </header>
+
+        <main>
+            <div class="voice-interface">
+                <div class="status-indicator" id="statusIndicator">
+                    <div class="pulse"></div>
+                    <span id="statusText">Ready to Connect</span>
+                </div>
+
+                <div class="controls">
+                    <button id="connectBtn" class="btn btn-primary">
+                        🎙️ Start Voice Assistant
+                    </button>
+                    <button id="disconnectBtn" class="btn btn-secondary" disabled>
+                        🔴 End Call
+                    </button>
+                </div>
+
+                <div class="audio-controls" id="audioControls" style="display: none;">
+                    <div class="volume-meter">
+                        <label>Microphone Level:</label>
+                        <div class="meter-bar">
+                            <div id="volumeLevel" class="meter-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3>💡 How to Use</h3>
+                    <ol>
+                        <li>Click "Start Voice Assistant" to begin</li>
+                        <li>Allow microphone access when prompted</li>
+                        <li>Speak naturally to make a reservation</li>
+                        <li>The assistant will guide you through the booking process</li>
+                    </ol>
+                </div>
+
+                <div class="transcript" id="transcript">
+                    <h3>📝 Conversation</h3>
+                    <div id="transcriptContent" class="transcript-content">
+                        <p class="transcript-message system">Conversation will appear here...</p>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="info-panel">
+                <div class="card">
+                    <h3>🏨 About Our Hotel</h3>
+                    <p><strong>Location:</strong> Auckland CBD, New Zealand</p>
+                    <p><strong>Check-in:</strong> 2:00 PM</p>
+                    <p><strong>Check-out:</strong> 11:00 AM</p>
+                </div>
+
+                <div class="card">
+                    <h3>🛏️ Room Types</h3>
+                    <ul class="room-list">
+                        <li>
+                            <strong>Standard Room</strong>
+                            <span class="price">$180 NZD/night</span>
+                            <small>Up to 2 guests</small>
+                        </li>
+                        <li>
+                            <strong>Deluxe Room</strong>
+                            <span class="price">$280 NZD/night</span>
+                            <small>Up to 3 guests</small>
+                        </li>
+                        <li>
+                            <strong>Executive Suite</strong>
+                            <span class="price">$450 NZD/night</span>
+                            <small>Up to 4 guests</small>
+                        </li>
+                        <li>
+                            <strong>Penthouse Suite</strong>
+                            <span class="price">$850 NZD/night</span>
+                            <small>Up to 6 guests</small>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>✨ Amenities</h3>
+                    <div class="amenities">
+                        <span>Free WiFi</span>
+                        <span>Swimming Pool</span>
+                        <span>Fitness Center</span>
+                        <span>Restaurant & Bar</span>
+                        <span>24/7 Room Service</span>
+                        <span>Spa & Wellness</span>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <footer>
+            <p>Powered by OpenAI Realtime API | Demo Application</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
