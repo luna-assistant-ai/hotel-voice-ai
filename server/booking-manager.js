@@ -79,6 +79,28 @@ export async function createBooking(bookingData) {
       };
     }
 
+    // Check availability - prevent overbooking
+    const overlappingBookings = db.bookings.filter(booking => {
+      if (booking.status !== 'confirmed') return false;
+      if (booking.room_type !== bookingData.room_type) return false;
+
+      const bookingCheckIn = new Date(booking.check_in_date);
+      const bookingCheckOut = new Date(booking.check_out_date);
+
+      // Check for date overlap
+      return !(checkOut <= bookingCheckIn || checkIn >= bookingCheckOut);
+    }).length;
+
+    const inventory = roomType.inventory || 5;
+    const availableCount = inventory - overlappingBookings;
+
+    if (availableCount <= 0) {
+      return {
+        success: false,
+        error: `No ${roomType.name} available for the selected dates. Please choose different dates or another room type.`
+      };
+    }
+
     // Calculate total price
     const totalPrice = roomType.price * nights;
 
