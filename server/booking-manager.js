@@ -1,8 +1,12 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { getRoomTypeById } from './hotel-config.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const DB_FILE = './database.json';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const DB_FILE = join(__dirname, 'database.json');
 
 // Initialize database
 function initDatabase() {
@@ -32,6 +36,21 @@ export async function createBooking(bookingData) {
     const checkIn = new Date(bookingData.check_in_date);
     const checkOut = new Date(bookingData.check_out_date);
 
+    // Check for invalid dates
+    if (isNaN(checkIn.getTime())) {
+      return {
+        success: false,
+        error: 'Invalid check-in date'
+      };
+    }
+
+    if (isNaN(checkOut.getTime())) {
+      return {
+        success: false,
+        error: 'Invalid check-out date'
+      };
+    }
+
     if (checkOut <= checkIn) {
       return {
         success: false,
@@ -57,6 +76,28 @@ export async function createBooking(bookingData) {
       return {
         success: false,
         error: `This room type can accommodate maximum ${roomType.capacity} guests`
+      };
+    }
+
+    // Check availability - prevent overbooking
+    const overlappingBookings = db.bookings.filter(booking => {
+      if (booking.status !== 'confirmed') return false;
+      if (booking.room_type !== bookingData.room_type) return false;
+
+      const bookingCheckIn = new Date(booking.check_in_date);
+      const bookingCheckOut = new Date(booking.check_out_date);
+
+      // Check for date overlap
+      return !(checkOut <= bookingCheckIn || checkIn >= bookingCheckOut);
+    }).length;
+
+    const inventory = roomType.inventory || 5;
+    const availableCount = inventory - overlappingBookings;
+
+    if (availableCount <= 0) {
+      return {
+        success: false,
+        error: `No ${roomType.name} available for the selected dates. Please choose different dates or another room type.`
       };
     }
 

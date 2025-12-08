@@ -49,9 +49,15 @@ export async function createRealtimeSession() {
 
       openAiWs.send(JSON.stringify(sessionConfig));
 
-      // Handle function calls
+      // Handle incoming messages
       openAiWs.on('message', async (message) => {
         const event = JSON.parse(message.toString());
+
+        // Trigger initial response after session is updated
+        if (event.type === 'session.updated') {
+          console.log('✅ Session updated, triggering initial response');
+          openAiWs.send(JSON.stringify({ type: 'response.create' }));
+        }
 
         if (event.type === 'response.function_call_arguments.done') {
           await handleFunctionCall(openAiWs, event);
@@ -275,8 +281,34 @@ async function handleFunctionCall(ws, event) {
 }
 
 function checkAvailability(args) {
-  // For demo purposes, we'll assume rooms are always available
-  // In a real system, this would check against actual bookings
+  // Validate dates first
+  const checkIn = new Date(args.check_in_date);
+  const checkOut = new Date(args.check_out_date);
+
+  if (isNaN(checkIn.getTime())) {
+    return {
+      available: false,
+      message: 'Invalid check-in date'
+    };
+  }
+
+  if (isNaN(checkOut.getTime())) {
+    return {
+      available: false,
+      message: 'Invalid check-out date'
+    };
+  }
+
+  const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+
+  if (nights <= 0) {
+    return {
+      available: false,
+      message: 'Check-out date must be after check-in date'
+    };
+  }
+
+  // Check room type validity
   const roomTypes = getRoomTypes();
   const requestedRoom = args.room_type ?
     roomTypes.find(r => r.id === args.room_type) :
@@ -289,21 +321,49 @@ function checkAvailability(args) {
     };
   }
 
-  const checkIn = new Date(args.check_in_date);
-  const checkOut = new Date(args.check_out_date);
-  const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+  // Check actual availability against existing bookings
+  const allBookings = getAllBookings();
+  const bookings = allBookings.bookings || [];
 
-  if (nights <= 0) {
+  const roomsToCheck = args.room_type ? [requestedRoom] : roomTypes;
+  const availableRooms = [];
+
+  for (const room of roomsToCheck) {
+    // Count overlapping bookings for this room type
+    const overlappingBookings = bookings.filter(booking => {
+      if (booking.status !== 'confirmed') return false;
+      if (booking.room_type !== room.id) return false;
+
+      const bookingCheckIn = new Date(booking.check_in_date);
+      const bookingCheckOut = new Date(booking.check_out_date);
+
+      // Check for date overlap
+      return !(checkOut <= bookingCheckIn || checkIn >= bookingCheckOut);
+    }).length;
+
+    // Assume each room type has limited inventory (configurable per room type)
+    const inventory = room.inventory || 5; // Default 5 rooms per type
+    const availableCount = inventory - overlappingBookings;
+
+    if (availableCount > 0) {
+      availableRooms.push({
+        ...room,
+        available_count: availableCount
+      });
+    }
+  }
+
+  if (availableRooms.length === 0) {
     return {
       available: false,
-      message: 'Check-out date must be after check-in date'
+      message: `No rooms available for the selected dates (${nights} night(s))`
     };
   }
 
   return {
     available: true,
-    rooms: args.room_type ? [requestedRoom] : roomTypes,
+    rooms: availableRooms,
     nights: nights,
-    message: `Rooms available for ${nights} night(s)`
+    message: `${availableRooms.length} room type(s) available for ${nights} night(s)`
   };
 }

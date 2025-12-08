@@ -34,8 +34,68 @@ const server = app.listen(PORT, () => {
 // WebSocket server for OpenAI Realtime API
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', async (clientWs) => {
-  console.log('🔌 Client connected');
+// Rate limiting and connection tracking
+const connectionsByIP = new Map(); // IP -> count
+const connectionTimestamps = new Map(); // IP -> [timestamps]
+const MAX_CONNECTIONS_PER_IP = 3;
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_CONNECTIONS_PER_WINDOW = 10;
+
+// Cleanup old timestamps periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of connectionTimestamps.entries()) {
+    const recentTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (recentTimestamps.length === 0) {
+      connectionTimestamps.delete(ip);
+    } else {
+      connectionTimestamps.set(ip, recentTimestamps);
+    }
+  }
+}, 60000);
+
+wss.on('connection', async (clientWs, req) => {
+  // Get client IP
+  const clientIP = req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                   req.socket.remoteAddress;
+
+  // Verify origin (allow only same-origin or localhost in development)
+  const origin = req.headers.origin || req.headers.referer;
+  const isLocalhost = origin?.includes('localhost') || origin?.includes('127.0.0.1');
+  const isSameOrigin = origin?.startsWith(`http://${req.headers.host}`) ||
+                       origin?.startsWith(`https://${req.headers.host}`);
+
+  if (!isLocalhost && !isSameOrigin) {
+    console.log(`🚫 Rejected connection from unauthorized origin: ${origin}`);
+    clientWs.close(1008, 'Unauthorized origin');
+    return;
+  }
+
+  // Rate limiting check
+  const now = Date.now();
+  const timestamps = connectionTimestamps.get(clientIP) || [];
+  const recentTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+
+  if (recentTimestamps.length >= MAX_CONNECTIONS_PER_WINDOW) {
+    console.log(`🚫 Rate limit exceeded for IP: ${clientIP}`);
+    clientWs.close(1008, 'Rate limit exceeded');
+    return;
+  }
+
+  // Connection limit check
+  const currentConnections = connectionsByIP.get(clientIP) || 0;
+  if (currentConnections >= MAX_CONNECTIONS_PER_IP) {
+    console.log(`🚫 Too many concurrent connections from IP: ${clientIP}`);
+    clientWs.close(1008, 'Too many connections');
+    return;
+  }
+
+  // Track connection
+  recentTimestamps.push(now);
+  connectionTimestamps.set(clientIP, recentTimestamps);
+  connectionsByIP.set(clientIP, currentConnections + 1);
+
+  console.log(`🔌 Client connected from ${clientIP} (${currentConnections + 1}/${MAX_CONNECTIONS_PER_IP})`);
 
   try {
     // Create OpenAI Realtime API session
@@ -64,6 +124,11 @@ wss.on('connection', async (clientWs) => {
     // Handle disconnections
     clientWs.on('close', () => {
       console.log('🔌 Client disconnected');
+      // Decrement connection count
+      const count = connectionsByIP.get(clientIP) || 0;
+      if (count > 0) {
+        connectionsByIP.set(clientIP, count - 1);
+      }
       openAiWs.close();
     });
 
@@ -75,6 +140,11 @@ wss.on('connection', async (clientWs) => {
     // Handle errors
     clientWs.on('error', (error) => {
       console.error('❌ Client WebSocket error:', error);
+      // Decrement connection count
+      const count = connectionsByIP.get(clientIP) || 0;
+      if (count > 0) {
+        connectionsByIP.set(clientIP, count - 1);
+      }
       openAiWs.close();
     });
 
@@ -85,6 +155,11 @@ wss.on('connection', async (clientWs) => {
 
   } catch (error) {
     console.error('❌ Failed to create OpenAI session:', error);
+    // Decrement connection count
+    const count = connectionsByIP.get(clientIP) || 0;
+    if (count > 0) {
+      connectionsByIP.set(clientIP, count - 1);
+    }
     clientWs.close();
   }
 });
