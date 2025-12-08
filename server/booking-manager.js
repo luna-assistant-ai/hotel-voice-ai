@@ -28,7 +28,7 @@ function writeDatabase(data) {
 }
 
 // Create a new booking
-export async function createBooking(bookingData) {
+export function createBooking(bookingData) {
   try {
     const db = readDatabase();
 
@@ -148,7 +148,7 @@ export async function createBooking(bookingData) {
 }
 
 // Get booking by confirmation number
-export async function getBooking(confirmationNumber) {
+export function getBooking(confirmationNumber) {
   try {
     const db = readDatabase();
     const booking = db.bookings.find(b => b.confirmation_number === confirmationNumber);
@@ -175,7 +175,7 @@ export async function getBooking(confirmationNumber) {
 }
 
 // Get all bookings
-export async function getAllBookings() {
+export function getAllBookings() {
   try {
     const db = readDatabase();
     return {
@@ -192,7 +192,7 @@ export async function getAllBookings() {
 }
 
 // Update booking
-export async function updateBooking(confirmationNumber, updates) {
+export function updateBooking(confirmationNumber, updates) {
   try {
     const db = readDatabase();
     const bookingIndex = db.bookings.findIndex(b => b.confirmation_number === confirmationNumber);
@@ -229,7 +229,7 @@ export async function updateBooking(confirmationNumber, updates) {
 }
 
 // Cancel booking
-export async function cancelBooking(confirmationNumber) {
+export function cancelBooking(confirmationNumber) {
   try {
     const db = readDatabase();
     const bookingIndex = db.bookings.findIndex(b => b.confirmation_number === confirmationNumber);

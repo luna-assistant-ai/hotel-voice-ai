@@ -229,15 +229,15 @@ async function handleFunctionCall(ws, event) {
   try {
     switch (functionName) {
       case 'create_booking':
-        result = await createBooking(args);
+        result = createBooking(args);
         break;
 
       case 'get_booking':
-        result = await getBooking(args.confirmation_number);
+        result = getBooking(args.confirmation_number);
         break;
 
       case 'cancel_booking':
-        result = await cancelBooking(args.confirmation_number);
+        result = cancelBooking(args.confirmation_number);
         break;
 
       case 'check_availability':
