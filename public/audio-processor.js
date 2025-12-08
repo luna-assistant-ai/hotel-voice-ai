@@ -7,12 +7,16 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         super();
 
         // Buffer configuration
-        // 24kHz * 0.03s = 720 samples per chunk (30ms chunks)
-        this.chunkSize = 720;
+        // 24kHz * 0.02s = 480 samples per chunk (20ms chunks)
+        this.chunkSize = 480;
         this.buffer = [];
 
-        // VAD client disabled - let OpenAI server_vad handle turn detection
-        // This prevents conflicts and ensures smooth conversation flow
+        // Lightweight silence detection to trigger commits and reduce latency
+        // RMS threshold is conservative to avoid false positives
+        this.silenceThreshold = 0.015;
+        this.silenceSamples = 0;
+        // Commit after ~400ms of silence at 24kHz
+        this.silenceSamplesTarget = Math.round(0.4 * 24000);
 
         // Listen for commands from main thread
         this.port.onmessage = (event) => {
@@ -53,16 +57,33 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
 
         // Convert Float32 to PCM16
         const pcm16 = new Int16Array(this.buffer.length);
+        let rmsAccumulator = 0;
         for (let i = 0; i < this.buffer.length; i++) {
             const s = Math.max(-1, Math.min(1, this.buffer[i]));
             pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            rmsAccumulator += s * s;
+        }
+
+        const rms = Math.sqrt(rmsAccumulator / this.buffer.length);
+        const isSilent = rms < this.silenceThreshold;
+
+        if (isSilent) {
+            this.silenceSamples += pcm16.length;
+        } else {
+            this.silenceSamples = 0;
+        }
+
+        const shouldCommit = isSilent && this.silenceSamples >= this.silenceSamplesTarget;
+        if (shouldCommit) {
+            // Reset counter so we only commit once per silence segment
+            this.silenceSamples = 0;
         }
 
         // Send to main thread
-        // No shouldCommit - server_vad handles all turn detection
         this.port.postMessage({
             audio: pcm16.buffer,
-            sampleCount: pcm16.length
+            sampleCount: pcm16.length,
+            shouldCommit
         }, [pcm16.buffer]); // Transfer buffer for efficiency
 
         // Clear buffer

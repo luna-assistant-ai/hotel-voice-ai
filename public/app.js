@@ -9,7 +9,8 @@ class VoiceAssistant {
 
         // Audio buffering and backpressure
         this.pendingAudioChunks = [];
-        this.maxPendingChunks = 2; // Limit buffering to prevent overflow
+        this.maxPendingChunks = 5; // Slightly larger to avoid aggressive drops
+        this.maxBufferedBytes = 64 * 1024; // WebSocket bufferedAmount guardrail
         this.isSending = false;
 
         // Audio playback queue for smooth streaming
@@ -169,7 +170,10 @@ class VoiceAssistant {
 
             // Connect audio graph
             source.connect(this.audioWorkletNode);
-            this.audioWorkletNode.connect(this.audioContext.destination);
+            // Keep node alive without feeding mic to speakers
+            const muteGain = this.audioContext.createGain();
+            muteGain.gain.value = 0;
+            this.audioWorkletNode.connect(muteGain).connect(this.audioContext.destination);
 
             // Handle messages from AudioWorklet
             this.audioWorkletNode.port.onmessage = (event) => {
@@ -213,18 +217,28 @@ class VoiceAssistant {
                    this.ws &&
                    this.ws.readyState === WebSocket.OPEN) {
 
+                // WebSocket backpressure based on bufferedAmount
+                if (this.ws.bufferedAmount > this.maxBufferedBytes) {
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                    continue;
+                }
+
                 const chunk = this.pendingAudioChunks.shift();
 
                 // Convert PCM16 to base64
                 const base64Audio = this.arrayBufferToBase64(chunk.audio);
 
-                // Send append message only
-                // OpenAI server_vad handles turn detection and commits automatically
+                // Send append message
                 const appendMessage = {
                     type: 'input_audio_buffer.append',
                     audio: base64Audio
                 };
                 this.ws.send(JSON.stringify(appendMessage));
+
+                // On long silence, ask server to commit the buffer to reduce latency
+                if (chunk.shouldCommit) {
+                    this.ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+                }
 
                 // Small delay to avoid overwhelming the WebSocket
                 await new Promise(resolve => setTimeout(resolve, 1));
