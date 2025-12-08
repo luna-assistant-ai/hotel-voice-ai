@@ -1,8 +1,12 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { getRoomTypeById } from './hotel-config.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-const DB_FILE = './database.json';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const DB_FILE = join(__dirname, 'database.json');
 
 // Initialize database
 function initDatabase() {
@@ -31,6 +35,21 @@ export async function createBooking(bookingData) {
     // Validate dates
     const checkIn = new Date(bookingData.check_in_date);
     const checkOut = new Date(bookingData.check_out_date);
+
+    // Check for invalid dates
+    if (isNaN(checkIn.getTime())) {
+      return {
+        success: false,
+        error: 'Invalid check-in date'
+      };
+    }
+
+    if (isNaN(checkOut.getTime())) {
+      return {
+        success: false,
+        error: 'Invalid check-out date'
+      };
+    }
 
     if (checkOut <= checkIn) {
       return {

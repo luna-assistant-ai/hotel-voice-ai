@@ -31,6 +31,7 @@ export function getRoomTypes() {
       description: 'Comfortable room with city view, queen bed, and modern amenities',
       price: 180,
       capacity: 2,
+      inventory: 20,
       features: [
         'Queen bed',
         'City view',
@@ -47,6 +48,7 @@ export function getRoomTypes() {
       description: 'Spacious room with harbor view, king bed, and premium amenities',
       price: 280,
       capacity: 3,
+      inventory: 15,
       features: [
         'King bed',
         'Harbor view',
@@ -65,6 +67,7 @@ export function getRoomTypes() {
       description: 'Luxurious suite with separate living area, panoramic views',
       price: 450,
       capacity: 4,
+      inventory: 8,
       features: [
         'King bed',
         'Separate living room',
@@ -84,6 +87,7 @@ export function getRoomTypes() {
       description: 'Ultimate luxury with 360-degree views, multiple rooms, and exclusive services',
       price: 850,
       capacity: 6,
+      inventory: 2,
       features: [
         'Two king bedrooms',
         'Large living room',
