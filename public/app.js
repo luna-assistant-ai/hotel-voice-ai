@@ -3,8 +3,14 @@ class VoiceAssistant {
         this.ws = null;
         this.audioContext = null;
         this.audioStream = null;
+        this.audioWorkletNode = null;
         this.isConnected = false;
         this.isRecording = false;
+
+        // Audio buffering and backpressure
+        this.pendingAudioChunks = [];
+        this.maxPendingChunks = 2; // Limit buffering to prevent overflow
+        this.isSending = false;
 
         // UI Elements
         this.connectBtn = document.getElementById('connectBtn');
@@ -70,58 +76,108 @@ class VoiceAssistant {
     }
 
     async startAudioCapture() {
-        const source = this.audioContext.createMediaStreamSource(this.audioStream);
-        const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+        try {
+            // Load AudioWorklet module
+            await this.audioContext.audioWorklet.addModule('audio-processor.js');
 
-        // Volume meter
-        const analyser = this.audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        source.connect(analyser);
+            // Create source and worklet node
+            const source = this.audioContext.createMediaStreamSource(this.audioStream);
+            this.audioWorkletNode = new AudioWorkletNode(this.audioContext, 'audio-capture-processor');
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            // Volume meter
+            const analyser = this.audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
 
-        // Update volume meter
-        const updateVolume = () => {
-            if (!this.isConnected) return;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-            analyser.getByteFrequencyData(dataArray);
-            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-            const percentage = Math.min(100, (average / 128) * 100);
-            this.volumeLevel.style.width = `${percentage}%`;
+            // Update volume meter
+            const updateVolume = () => {
+                if (!this.isConnected) return;
 
-            requestAnimationFrame(updateVolume);
-        };
-        updateVolume();
+                analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                const percentage = Math.min(100, (average / 128) * 100);
+                this.volumeLevel.style.width = `${percentage}%`;
 
-        // Process and send audio
-        source.connect(processor);
-        processor.connect(this.audioContext.destination);
+                requestAnimationFrame(updateVolume);
+            };
+            updateVolume();
 
-        processor.onaudioprocess = (e) => {
-            if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-                return;
-            }
+            // Connect audio graph
+            source.connect(this.audioWorkletNode);
+            this.audioWorkletNode.connect(this.audioContext.destination);
 
-            const inputData = e.inputBuffer.getChannelData(0);
-
-            // Convert to Int16Array (PCM16)
-            const pcm16 = new Int16Array(inputData.length);
-            for (let i = 0; i < inputData.length; i++) {
-                const s = Math.max(-1, Math.min(1, inputData[i]));
-                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-
-            // Convert to base64
-            const base64Audio = this.arrayBufferToBase64(pcm16.buffer);
-
-            // Send to OpenAI
-            const audioMessage = {
-                type: 'input_audio_buffer.append',
-                audio: base64Audio
+            // Handle messages from AudioWorklet
+            this.audioWorkletNode.port.onmessage = (event) => {
+                this.handleAudioChunk(event.data);
             };
 
-            this.ws.send(JSON.stringify(audioMessage));
-        };
+        } catch (error) {
+            console.error('Error starting audio capture:', error);
+            this.addTranscript('system', '❌ Failed to start audio capture. Please refresh and try again.');
+        }
+    }
+
+    handleAudioChunk(data) {
+        // Backpressure: drop chunks if too many pending or WS not ready
+        if (this.pendingAudioChunks.length >= this.maxPendingChunks) {
+            console.warn('Audio buffer full, dropping chunk');
+            return;
+        }
+
+        if (!this.isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            return;
+        }
+
+        // Queue the chunk
+        this.pendingAudioChunks.push(data);
+
+        // Process queue
+        this.processAudioQueue();
+    }
+
+    async processAudioQueue() {
+        // Already processing
+        if (this.isSending || this.pendingAudioChunks.length === 0) {
+            return;
+        }
+
+        this.isSending = true;
+
+        try {
+            while (this.pendingAudioChunks.length > 0 &&
+                   this.ws &&
+                   this.ws.readyState === WebSocket.OPEN) {
+
+                const chunk = this.pendingAudioChunks.shift();
+
+                // Convert PCM16 to base64
+                const base64Audio = this.arrayBufferToBase64(chunk.audio);
+
+                // Send append message
+                const appendMessage = {
+                    type: 'input_audio_buffer.append',
+                    audio: base64Audio
+                };
+                this.ws.send(JSON.stringify(appendMessage));
+
+                // Send commit if this chunk should trigger one
+                if (chunk.shouldCommit) {
+                    const commitMessage = {
+                        type: 'input_audio_buffer.commit'
+                    };
+                    this.ws.send(JSON.stringify(commitMessage));
+                }
+
+                // Small delay to avoid overwhelming the WebSocket
+                await new Promise(resolve => setTimeout(resolve, 1));
+            }
+        } catch (error) {
+            console.error('Error processing audio queue:', error);
+        } finally {
+            this.isSending = false;
+        }
     }
 
     handleMessage(event) {
@@ -185,13 +241,21 @@ class VoiceAssistant {
 
         this.addTranscript('system', '⚠️ Disconnected from server.');
 
-        // Clean up
+        // Clean up audio resources
+        if (this.audioWorkletNode) {
+            this.audioWorkletNode.disconnect();
+            this.audioWorkletNode = null;
+        }
         if (this.audioStream) {
             this.audioStream.getTracks().forEach(track => track.stop());
         }
         if (this.audioContext) {
             this.audioContext.close();
         }
+
+        // Clear pending audio chunks
+        this.pendingAudioChunks = [];
+        this.isSending = false;
     }
 
     disconnect() {
