@@ -1,27 +1,5 @@
-import { Agent } from '@openai/agents-core';
-import { RealtimeSession, RealtimeAgent, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
-
-// Robust shim: ensure both Agent and RealtimeAgent (and instances) have getEnabledHandoffs defined
-const ensureHandoff = (obj: any) => {
-  if (!obj) return;
-  if (!obj.prototype.getEnabledHandoffs) {
-    obj.prototype.getEnabledHandoffs = function () { return []; };
-  }
-  if (!obj.prototype.getAllTools) {
-    obj.prototype.getAllTools = function () { return this.tools || []; };
-  }
-};
-ensureHandoff(Agent);
-ensureHandoff(RealtimeAgent);
-
-class PatchedRealtimeAgent extends RealtimeAgent {
-  getEnabledHandoffs() {
-    return [];
-  }
-  getAllTools() {
-    return this.tools || [];
-  }
-}
+import { RealtimeSession, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
+import { createSimpleConciergeAgent } from './agents.js';
 
 async function fetchRealtimeToken(model = 'gpt-4o-realtime-preview-2024-12-17') {
   const res = await fetch('/api/realtime-token', {
@@ -70,15 +48,8 @@ class VoiceAgent {
         url: token.url, // optional, SDK defaults to OpenAI endpoint if undefined
       });
 
-      const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
-Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
-
-      const agent = new PatchedRealtimeAgent({
-        name: 'Concierge',
-        instructions,
-        tools: [],
-      });
-      (agent as any).getEnabledHandoffs = (agent as any).getEnabledHandoffs || (() => []);
+      // Create agent with full booking tools (SDK-compliant implementation)
+      const agent = createSimpleConciergeAgent();
 
       // IMPORTANT: use SDK-expected signature new RealtimeSession(agent, options)
       this.session = new RealtimeSession(agent, {
@@ -119,6 +90,18 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
 
     this.session.on('conversation.item.input_audio_transcription.completed', (event: any) => {
       this.addTranscript('user', event.transcript);
+    });
+
+    // Tool call events
+    this.session.on('response.function_call_arguments.done', (event: any) => {
+      console.log('🔧 Tool call:', event.name, event.arguments);
+      this.addTranscript('system', `🔧 Using tool: ${event.name}`);
+    });
+
+    this.session.on('response.done', (event: any) => {
+      if (event.response?.status === 'completed') {
+        console.log('✅ Response completed');
+      }
     });
 
     this.session.on('error', (event: any) => {

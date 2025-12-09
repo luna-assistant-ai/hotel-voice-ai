@@ -5,8 +5,10 @@
   "main": "server/index.js",
   "type": "module",
   "scripts": {
+    "build": "node build.mjs",
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
+    "build:watch": "node build.mjs --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -25,6 +27,7 @@
     "esbuild": "^0.27.1",
     "express": "^4.18.2",
     "uuid": "^9.0.1",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "zod": "^3.25.76"
   }
 }
