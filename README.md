@@ -456,6 +456,28 @@ Monitor the console output to see:
 - Booking operations
 - Errors and warnings
 
+### Running Automated Tests
+
+Run the test suite to validate your installation:
+
+```bash
+npm test
+# or directly:
+./test.sh
+```
+
+The test suite validates:
+- ✅ Bundle generation and syntax
+- ✅ TypeScript source files presence
+- ✅ Dependencies installation
+- ✅ Server files integrity
+
+Tests will automatically check:
+1. Bundle exists and has valid JavaScript syntax
+2. All TypeScript source files are present (main.ts, agents.ts, tools.ts, booking-api.ts, hotel-config.ts)
+3. Required dependencies (@openai/agents, zod) are installed
+4. All server files are present and accessible
+
 ## 🤝 Contributing
 
 This is a demo project, but suggestions and improvements are welcome!
@@ -504,6 +526,16 @@ For issues and questions:
 - ✅ **Source Maps**: Full debugging support in browser DevTools
 - ✅ **Type Safety**: End-to-end TypeScript with no `any` types
 - ✅ **Documentation**: Comprehensive inline JSDoc comments
+- ✅ **Automated Testing**: Bash test suite (`test.sh`) for installation validation
+
+### 🎯 Latest Updates (v2.0.1)
+- ✅ **Enhanced Transcript Rendering**: Improved real-time display of conversation transcripts
+- ✅ **Client Secret Handling**: Optimized Google Analytics client_secret response handling
+- ✅ **Test Suite**: Comprehensive automated tests for SDK implementation validation
+  - Bundle generation and syntax validation
+  - TypeScript source files verification
+  - Dependency checking
+  - Server files integrity
 
 **Migration Notes**:
 - SDK tools replace legacy JSON function definitions
