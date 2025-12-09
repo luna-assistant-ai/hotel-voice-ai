@@ -17242,7 +17242,7 @@ Be empathetic, helpful, and solution-oriented.`,
         this.updateStatus("Connecting...", "connecting");
         this.connectBtn.disabled = true;
         const token = await fetchRealtimeToken();
-        const apiKey = token.client_secret?.value ?? token.client_secret?.secret ?? token.client_secret;
+        const apiKey = token.client_secret?.value ?? token.client_secret?.secret ?? token.client_secret ?? token.value;
         const model = token.model || "gpt-4o-realtime-preview-2024-12-17";
         this.transport = new OpenAIRealtimeWebRTC({
           apiKey,
@@ -17279,6 +17279,12 @@ Be empathetic, helpful, and solution-oriented.`,
       });
       this.session.on("response.audio_transcript.done", (event) => {
         this.updateLastTranscript("assistant", event.transcript, true);
+      });
+      this.session.on("response.output_text.delta", (event) => {
+        this.updateLastTranscript("assistant", event.delta, false);
+      });
+      this.session.on("response.output_text.done", (event) => {
+        this.updateLastTranscript("assistant", event.output_text || event.transcript || "", true);
       });
       this.session.on("conversation.item.input_audio_transcription.completed", (event) => {
         this.addTranscript("user", event.transcript);
@@ -17323,7 +17329,14 @@ Be empathetic, helpful, and solution-oriented.`,
       this.statusText.textContent = text;
       this.statusIndicator.className = "status-indicator " + state;
     }
+    removePlaceholder() {
+      const first = this.transcriptContent.firstElementChild;
+      if (first && first.textContent?.includes("Conversation will appear here")) {
+        this.transcriptContent.removeChild(first);
+      }
+    }
     addTranscript(role, text) {
+      this.removePlaceholder();
       const message = document.createElement("div");
       message.className = `transcript-message ${role}`;
       if (role !== "system") {

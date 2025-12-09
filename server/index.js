@@ -69,9 +69,18 @@ app.post('/api/realtime-token', async (req, res) => {
     }
 
     const json = await response.json();
+
+    // GA response can be either { client_secret: {...}, url, ice_servers }
+    // or { value, expires_at, session } (value is the ek_ token)
+    const clientSecret = json.client_secret
+      ? json.client_secret
+      : json.value
+        ? { value: json.value, expires_at: json.expires_at }
+        : null;
+
     res.json({
       model,
-      client_secret: json.client_secret,
+      client_secret: clientSecret,
       ice_servers: json.ice_servers,
       url: json.url
     });

@@ -39,7 +39,11 @@ class VoiceAgent {
       this.connectBtn.disabled = true;
 
       const token = await fetchRealtimeToken();
-      const apiKey = token.client_secret?.value ?? token.client_secret?.secret ?? token.client_secret;
+      const apiKey =
+        token.client_secret?.value ??
+        token.client_secret?.secret ??
+        token.client_secret ??
+        token.value; // GA may return top-level value
       const model = token.model || 'gpt-4o-realtime-preview-2024-12-17';
 
       // Transport (WebRTC) - uses ephemeral client key
@@ -86,6 +90,15 @@ class VoiceAgent {
 
     this.session.on('response.audio_transcript.done', (event: any) => {
       this.updateLastTranscript('assistant', event.transcript, true);
+    });
+
+    // Text outputs (fallback if audio transcript events are not emitted)
+    this.session.on('response.output_text.delta', (event: any) => {
+      this.updateLastTranscript('assistant', event.delta, false);
+    });
+
+    this.session.on('response.output_text.done', (event: any) => {
+      this.updateLastTranscript('assistant', event.output_text || event.transcript || '', true);
     });
 
     this.session.on('conversation.item.input_audio_transcription.completed', (event: any) => {
@@ -141,7 +154,15 @@ class VoiceAgent {
     this.statusIndicator.className = 'status-indicator ' + state;
   }
 
+  removePlaceholder() {
+    const first = this.transcriptContent.firstElementChild;
+    if (first && first.textContent?.includes('Conversation will appear here')) {
+      this.transcriptContent.removeChild(first);
+    }
+  }
+
   addTranscript(role: 'user' | 'assistant' | 'system', text: string) {
+    this.removePlaceholder();
     const message = document.createElement('div');
     message.className = `transcript-message ${role}`;
     if (role !== 'system') {
