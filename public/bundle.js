@@ -28175,6 +28175,9 @@ updateAvailableMcpTools_fn = function() {
 var RealtimeSession = _RealtimeSession;
 
 // src/main.ts
+RealtimeAgent.prototype.getEnabledHandoffs = RealtimeAgent.prototype.getEnabledHandoffs || function() {
+  return [];
+};
 async function fetchRealtimeToken(model = "gpt-4o-realtime-preview-2024-12-17") {
   const res = await fetch("/api/realtime-token", {
     method: "POST",
