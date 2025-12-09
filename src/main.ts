@@ -1,9 +1,15 @@
 import { Agent } from '@openai/agents-core';
 import { RealtimeSession, RealtimeAgent, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
 
-// Temporary shim: some releases of agents-core lack getEnabledHandoffs; ensure it's defined on Agent and RealtimeAgent.
-(Agent as any).prototype.getEnabledHandoffs = (Agent as any).prototype.getEnabledHandoffs || function () { return []; };
-(RealtimeAgent as any).prototype.getEnabledHandoffs = (RealtimeAgent as any).prototype.getEnabledHandoffs || function () { return []; };
+// Robust shim: ensure both Agent and RealtimeAgent (and instances) have getEnabledHandoffs defined
+const ensureHandoff = (obj: any) => {
+  if (!obj) return;
+  if (!obj.prototype.getEnabledHandoffs) {
+    obj.prototype.getEnabledHandoffs = function () { return []; };
+  }
+};
+ensureHandoff(Agent);
+ensureHandoff(RealtimeAgent);
 
 class PatchedRealtimeAgent extends RealtimeAgent {
   getEnabledHandoffs() {

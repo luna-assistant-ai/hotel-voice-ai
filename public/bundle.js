@@ -28175,12 +28175,16 @@ updateAvailableMcpTools_fn = function() {
 var RealtimeSession = _RealtimeSession;
 
 // src/main.ts
-Agent.prototype.getEnabledHandoffs = Agent.prototype.getEnabledHandoffs || function() {
-  return [];
+var ensureHandoff = (obj) => {
+  if (!obj) return;
+  if (!obj.prototype.getEnabledHandoffs) {
+    obj.prototype.getEnabledHandoffs = function() {
+      return [];
+    };
+  }
 };
-RealtimeAgent.prototype.getEnabledHandoffs = RealtimeAgent.prototype.getEnabledHandoffs || function() {
-  return [];
-};
+ensureHandoff(Agent);
+ensureHandoff(RealtimeAgent);
 var PatchedRealtimeAgent = class extends RealtimeAgent {
   getEnabledHandoffs() {
     return [];
