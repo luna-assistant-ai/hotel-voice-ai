@@ -17,6 +17,12 @@ class VoiceAssistant {
         this.audioPlaybackQueue = [];
         this.nextPlaybackTime = 0;
         this.isAssistantSpeaking = false;
+        this.currentPlaybackSource = null;
+        this.pendingCancel = false;
+        this.bargeInRmsThreshold = 900; // PCM16 RMS threshold to trigger barge-in cancel
+        this.currentPlaybackSource = null;
+        this.pendingCancel = false;
+        this.bargeInRmsThreshold = 900; // PCM16 RMS threshold to trigger barge-in cancel
 
         // Reconnection logic
         this.reconnectAttempts = 0;
@@ -202,6 +208,21 @@ class VoiceAssistant {
             return;
         }
 
+        // If assistant is speaking and we detect strong user audio, trigger cancel (barge-in)
+        if (this.isAssistantSpeaking && !this.pendingCancel && data.audio) {
+            const samples = new Int16Array(data.audio);
+            let sumSq = 0;
+            for (let i = 0; i < samples.length; i++) {
+                const s = samples[i];
+                sumSq += s * s;
+            }
+            const rms = Math.sqrt(sumSq / samples.length);
+            if (rms >= this.bargeInRmsThreshold) {
+                this.pendingCancel = true;
+                this.sendCancelAndStopPlayback();
+            }
+        }
+
         // Queue the chunk
         this.pendingAudioChunks.push(data);
 
@@ -284,6 +305,11 @@ class VoiceAssistant {
                     if (data.delta) {
                         this.playAudio(data.delta);
                     }
+                    break;
+                
+                case 'response.audio.done':
+                    // Assistant finished speaking
+                    this.isAssistantSpeaking = false;
                     break;
 
                 case 'error':
@@ -424,6 +450,7 @@ class VoiceAssistant {
             const source = this.audioContext.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(this.audioContext.destination);
+            this.currentPlaybackSource = source;
 
             // Track when assistant starts/stops speaking
             if (!this.isAssistantSpeaking) {
@@ -432,6 +459,9 @@ class VoiceAssistant {
             }
 
             source.onended = () => {
+                if (this.currentPlaybackSource === source) {
+                    this.currentPlaybackSource = null;
+                }
                 // Check if more audio is coming
                 setTimeout(() => {
                     if (this.audioPlaybackQueue.length === 0) {
@@ -446,6 +476,31 @@ class VoiceAssistant {
             // Update next playback time for gapless playback
             this.nextPlaybackTime = playTime + audioBuffer.duration;
         }
+    }
+
+    sendCancelAndStopPlayback() {
+        // Stop current and queued playback
+        if (this.currentPlaybackSource) {
+            try {
+                this.currentPlaybackSource.stop();
+            } catch (e) {
+                console.warn('Stop playback error:', e);
+            }
+            this.currentPlaybackSource = null;
+        }
+        this.audioPlaybackQueue = [];
+        this.isAssistantSpeaking = false;
+        this.updateAssistantSpeakingIndicator(false);
+
+        // Send cancel to OpenAI
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'response.cancel' }));
+        }
+
+        // Reset pending cancel after a short moment
+        setTimeout(() => {
+            this.pendingCancel = false;
+        }, 200);
     }
 
     updateAssistantSpeakingIndicator(isSpeaking) {
