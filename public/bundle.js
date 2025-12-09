@@ -28182,12 +28182,20 @@ var ensureHandoff = (obj) => {
       return [];
     };
   }
+  if (!obj.prototype.getAllTools) {
+    obj.prototype.getAllTools = function() {
+      return this.tools || [];
+    };
+  }
 };
 ensureHandoff(Agent);
 ensureHandoff(RealtimeAgent);
 var PatchedRealtimeAgent = class extends RealtimeAgent {
   getEnabledHandoffs() {
     return [];
+  }
+  getAllTools() {
+    return this.tools || [];
   }
 };
 async function fetchRealtimeToken(model = "gpt-4o-realtime-preview-2024-12-17") {

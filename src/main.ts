@@ -7,6 +7,9 @@ const ensureHandoff = (obj: any) => {
   if (!obj.prototype.getEnabledHandoffs) {
     obj.prototype.getEnabledHandoffs = function () { return []; };
   }
+  if (!obj.prototype.getAllTools) {
+    obj.prototype.getAllTools = function () { return this.tools || []; };
+  }
 };
 ensureHandoff(Agent);
 ensureHandoff(RealtimeAgent);
@@ -14,6 +17,9 @@ ensureHandoff(RealtimeAgent);
 class PatchedRealtimeAgent extends RealtimeAgent {
   getEnabledHandoffs() {
     return [];
+  }
+  getAllTools() {
+    return this.tools || [];
   }
 }
 
