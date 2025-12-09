@@ -512,6 +512,15 @@ var METADATA = {
 };
 var metadata_default = METADATA;
 
+// node_modules/@openai/agents-core/dist/utils/safeExecute.mjs
+async function safeExecute(fn) {
+  try {
+    return [null, await fn()];
+  } catch (error46) {
+    return [error46, null];
+  }
+}
+
 // node_modules/zod/v4/classic/external.js
 var external_exports = {};
 __export(external_exports, {
@@ -3429,13 +3438,13 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
     }
     return propValues;
   });
-  const isObject2 = isObject;
+  const isObject3 = isObject;
   const catchall = def.catchall;
   let value;
   inst._zod.parse = (payload, ctx) => {
     value ?? (value = _normalized.value);
     const input = payload.value;
-    if (!isObject2(input)) {
+    if (!isObject3(input)) {
       payload.issues.push({
         expected: "object",
         code: "invalid_type",
@@ -3509,7 +3518,7 @@ var $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) =>
     return (payload, ctx) => fn(shape, payload, ctx);
   };
   let fastpass;
-  const isObject2 = isObject;
+  const isObject3 = isObject;
   const jit = !globalConfig.jitless;
   const allowsEval2 = allowsEval;
   const fastEnabled = jit && allowsEval2.value;
@@ -3518,7 +3527,7 @@ var $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) =>
   inst._zod.parse = (payload, ctx) => {
     value ?? (value = _normalized.value);
     const input = payload.value;
-    if (!isObject2(input)) {
+    if (!isObject3(input)) {
       payload.issues.push({
         expected: "object",
         code: "invalid_type",
@@ -13176,6 +13185,107 @@ function date4(params) {
 // node_modules/zod/v4/classic/external.js
 config(en_default());
 
+// node_modules/openai/lib/parser.mjs
+function makeParseableTextFormat(response_format, parser) {
+  const obj = { ...response_format };
+  Object.defineProperties(obj, {
+    $brand: {
+      value: "auto-parseable-response-format",
+      enumerable: false
+    },
+    $parseRaw: {
+      value: parser,
+      enumerable: false
+    }
+  });
+  return obj;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/Options.mjs
+var ignoreOverride = /* @__PURE__ */ Symbol("Let zodToJsonSchema decide on which parser to use");
+var defaultOptions = {
+  name: void 0,
+  $refStrategy: "root",
+  effectStrategy: "input",
+  pipeStrategy: "all",
+  dateStrategy: "format:date-time",
+  mapStrategy: "entries",
+  nullableStrategy: "from-target",
+  removeAdditionalStrategy: "passthrough",
+  definitionPath: "definitions",
+  target: "jsonSchema7",
+  strictUnions: false,
+  errorMessages: false,
+  markdownDescription: false,
+  patternStrategy: "escape",
+  applyRegexFlags: false,
+  emailStrategy: "format:email",
+  base64Strategy: "contentEncoding:base64",
+  nameStrategy: "ref"
+};
+var getDefaultOptions = (options) => {
+  return typeof options === "string" ? {
+    ...defaultOptions,
+    basePath: ["#"],
+    definitions: {},
+    name: options
+  } : {
+    ...defaultOptions,
+    basePath: ["#"],
+    definitions: {},
+    ...options
+  };
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/util.mjs
+var zodDef = (zodSchema) => {
+  return "_def" in zodSchema ? zodSchema._def : zodSchema;
+};
+function isEmptyObj(obj) {
+  if (!obj)
+    return true;
+  for (const _k in obj)
+    return false;
+  return true;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/Refs.mjs
+var getRefs = (options) => {
+  const _options = getDefaultOptions(options);
+  const currentPath = _options.name !== void 0 ? [..._options.basePath, _options.definitionPath, _options.name] : _options.basePath;
+  return {
+    ..._options,
+    currentPath,
+    propertyPath: void 0,
+    seenRefs: /* @__PURE__ */ new Set(),
+    seen: new Map(Object.entries(_options.definitions).map(([name, def]) => [
+      zodDef(def),
+      {
+        def: zodDef(def),
+        path: [..._options.basePath, _options.definitionPath, name],
+        // Resolution of references will be forced even though seen, so it's ok that the schema is undefined here for now.
+        jsonSchema: void 0
+      }
+    ]))
+  };
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/errorMessages.mjs
+function addErrorMessage(res, key, errorMessage, refs) {
+  if (!refs?.errorMessages)
+    return;
+  if (errorMessage) {
+    res.errorMessage = {
+      ...res.errorMessage,
+      [key]: errorMessage
+    };
+  }
+}
+function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+  res[key] = value;
+  addErrorMessage(res, key, errorMessage, refs);
+}
+
 // node_modules/zod/v3/helpers/util.js
 var util;
 (function(util2) {
@@ -17052,6 +17162,1336 @@ var nullableType = ZodNullable2.create;
 var preprocessType = ZodEffects.createWithPreprocess;
 var pipelineType = ZodPipeline.create;
 
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/any.mjs
+function parseAnyDef() {
+  return {};
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/array.mjs
+function parseArrayDef(def, refs) {
+  const res = {
+    type: "array"
+  };
+  if (def.type?._def?.typeName !== ZodFirstPartyTypeKind2.ZodAny) {
+    res.items = parseDef(def.type._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "items"]
+    });
+  }
+  if (def.minLength) {
+    setResponseValueAndErrors(res, "minItems", def.minLength.value, def.minLength.message, refs);
+  }
+  if (def.maxLength) {
+    setResponseValueAndErrors(res, "maxItems", def.maxLength.value, def.maxLength.message, refs);
+  }
+  if (def.exactLength) {
+    setResponseValueAndErrors(res, "minItems", def.exactLength.value, def.exactLength.message, refs);
+    setResponseValueAndErrors(res, "maxItems", def.exactLength.value, def.exactLength.message, refs);
+  }
+  return res;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/bigint.mjs
+function parseBigintDef(def, refs) {
+  const res = {
+    type: "integer",
+    format: "int64"
+  };
+  if (!def.checks)
+    return res;
+  for (const check2 of def.checks) {
+    switch (check2.kind) {
+      case "min":
+        if (refs.target === "jsonSchema7") {
+          if (check2.inclusive) {
+            setResponseValueAndErrors(res, "minimum", check2.value, check2.message, refs);
+          } else {
+            setResponseValueAndErrors(res, "exclusiveMinimum", check2.value, check2.message, refs);
+          }
+        } else {
+          if (!check2.inclusive) {
+            res.exclusiveMinimum = true;
+          }
+          setResponseValueAndErrors(res, "minimum", check2.value, check2.message, refs);
+        }
+        break;
+      case "max":
+        if (refs.target === "jsonSchema7") {
+          if (check2.inclusive) {
+            setResponseValueAndErrors(res, "maximum", check2.value, check2.message, refs);
+          } else {
+            setResponseValueAndErrors(res, "exclusiveMaximum", check2.value, check2.message, refs);
+          }
+        } else {
+          if (!check2.inclusive) {
+            res.exclusiveMaximum = true;
+          }
+          setResponseValueAndErrors(res, "maximum", check2.value, check2.message, refs);
+        }
+        break;
+      case "multipleOf":
+        setResponseValueAndErrors(res, "multipleOf", check2.value, check2.message, refs);
+        break;
+    }
+  }
+  return res;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/boolean.mjs
+function parseBooleanDef() {
+  return {
+    type: "boolean"
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/branded.mjs
+function parseBrandedDef(_def, refs) {
+  return parseDef(_def.type._def, refs);
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/catch.mjs
+var parseCatchDef = (def, refs) => {
+  return parseDef(def.innerType._def, refs);
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/date.mjs
+function parseDateDef(def, refs, overrideDateStrategy) {
+  const strategy = overrideDateStrategy ?? refs.dateStrategy;
+  if (Array.isArray(strategy)) {
+    return {
+      anyOf: strategy.map((item, i) => parseDateDef(def, refs, item))
+    };
+  }
+  switch (strategy) {
+    case "string":
+    case "format:date-time":
+      return {
+        type: "string",
+        format: "date-time"
+      };
+    case "format:date":
+      return {
+        type: "string",
+        format: "date"
+      };
+    case "integer":
+      return integerDateParser(def, refs);
+  }
+}
+var integerDateParser = (def, refs) => {
+  const res = {
+    type: "integer",
+    format: "unix-time"
+  };
+  if (refs.target === "openApi3") {
+    return res;
+  }
+  for (const check2 of def.checks) {
+    switch (check2.kind) {
+      case "min":
+        setResponseValueAndErrors(
+          res,
+          "minimum",
+          check2.value,
+          // This is in milliseconds
+          check2.message,
+          refs
+        );
+        break;
+      case "max":
+        setResponseValueAndErrors(
+          res,
+          "maximum",
+          check2.value,
+          // This is in milliseconds
+          check2.message,
+          refs
+        );
+        break;
+    }
+  }
+  return res;
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/default.mjs
+function parseDefaultDef(_def, refs) {
+  return {
+    ...parseDef(_def.innerType._def, refs),
+    default: _def.defaultValue()
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/effects.mjs
+function parseEffectsDef(_def, refs, forceResolution) {
+  return refs.effectStrategy === "input" ? parseDef(_def.schema._def, refs, forceResolution) : {};
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/enum.mjs
+function parseEnumDef(def) {
+  return {
+    type: "string",
+    enum: [...def.values]
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/intersection.mjs
+var isJsonSchema7AllOfType = (type) => {
+  if ("type" in type && type.type === "string")
+    return false;
+  return "allOf" in type;
+};
+function parseIntersectionDef(def, refs) {
+  const allOf = [
+    parseDef(def.left._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "allOf", "0"]
+    }),
+    parseDef(def.right._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "allOf", "1"]
+    })
+  ].filter((x) => !!x);
+  let unevaluatedProperties = refs.target === "jsonSchema2019-09" ? { unevaluatedProperties: false } : void 0;
+  const mergedAllOf = [];
+  allOf.forEach((schema) => {
+    if (isJsonSchema7AllOfType(schema)) {
+      mergedAllOf.push(...schema.allOf);
+      if (schema.unevaluatedProperties === void 0) {
+        unevaluatedProperties = void 0;
+      }
+    } else {
+      let nestedSchema = schema;
+      if ("additionalProperties" in schema && schema.additionalProperties === false) {
+        const { additionalProperties, ...rest } = schema;
+        nestedSchema = rest;
+      } else {
+        unevaluatedProperties = void 0;
+      }
+      mergedAllOf.push(nestedSchema);
+    }
+  });
+  return mergedAllOf.length ? {
+    allOf: mergedAllOf,
+    ...unevaluatedProperties
+  } : void 0;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/literal.mjs
+function parseLiteralDef(def, refs) {
+  const parsedType8 = typeof def.value;
+  if (parsedType8 !== "bigint" && parsedType8 !== "number" && parsedType8 !== "boolean" && parsedType8 !== "string") {
+    return {
+      type: Array.isArray(def.value) ? "array" : "object"
+    };
+  }
+  if (refs.target === "openApi3") {
+    return {
+      type: parsedType8 === "bigint" ? "integer" : parsedType8,
+      enum: [def.value]
+    };
+  }
+  return {
+    type: parsedType8 === "bigint" ? "integer" : parsedType8,
+    const: def.value
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/string.mjs
+var emojiRegex2;
+var zodPatterns = {
+  /**
+   * `c` was changed to `[cC]` to replicate /i flag
+   */
+  cuid: /^[cC][^\s-]{8,}$/,
+  cuid2: /^[0-9a-z]+$/,
+  ulid: /^[0-9A-HJKMNP-TV-Z]{26}$/,
+  /**
+   * `a-z` was added to replicate /i flag
+   */
+  email: /^(?!\.)(?!.*\.\.)([a-zA-Z0-9_'+\-\.]*)[a-zA-Z0-9_+-]@([a-zA-Z0-9][a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$/,
+  /**
+   * Constructed a valid Unicode RegExp
+   *
+   * Lazily instantiate since this type of regex isn't supported
+   * in all envs (e.g. React Native).
+   *
+   * See:
+   * https://github.com/colinhacks/zod/issues/2433
+   * Fix in Zod:
+   * https://github.com/colinhacks/zod/commit/9340fd51e48576a75adc919bff65dbc4a5d4c99b
+   */
+  emoji: () => {
+    if (emojiRegex2 === void 0) {
+      emojiRegex2 = RegExp("^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$", "u");
+    }
+    return emojiRegex2;
+  },
+  /**
+   * Unused
+   */
+  uuid: /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/,
+  /**
+   * Unused
+   */
+  ipv4: /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/,
+  /**
+   * Unused
+   */
+  ipv6: /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/,
+  base64: /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/,
+  nanoid: /^[a-zA-Z0-9_-]{21}$/
+};
+function parseStringDef(def, refs) {
+  const res = {
+    type: "string"
+  };
+  function processPattern(value) {
+    return refs.patternStrategy === "escape" ? escapeNonAlphaNumeric(value) : value;
+  }
+  if (def.checks) {
+    for (const check2 of def.checks) {
+      switch (check2.kind) {
+        case "min":
+          setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number" ? Math.max(res.minLength, check2.value) : check2.value, check2.message, refs);
+          break;
+        case "max":
+          setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number" ? Math.min(res.maxLength, check2.value) : check2.value, check2.message, refs);
+          break;
+        case "email":
+          switch (refs.emailStrategy) {
+            case "format:email":
+              addFormat(res, "email", check2.message, refs);
+              break;
+            case "format:idn-email":
+              addFormat(res, "idn-email", check2.message, refs);
+              break;
+            case "pattern:zod":
+              addPattern(res, zodPatterns.email, check2.message, refs);
+              break;
+          }
+          break;
+        case "url":
+          addFormat(res, "uri", check2.message, refs);
+          break;
+        case "uuid":
+          addFormat(res, "uuid", check2.message, refs);
+          break;
+        case "regex":
+          addPattern(res, check2.regex, check2.message, refs);
+          break;
+        case "cuid":
+          addPattern(res, zodPatterns.cuid, check2.message, refs);
+          break;
+        case "cuid2":
+          addPattern(res, zodPatterns.cuid2, check2.message, refs);
+          break;
+        case "startsWith":
+          addPattern(res, RegExp(`^${processPattern(check2.value)}`), check2.message, refs);
+          break;
+        case "endsWith":
+          addPattern(res, RegExp(`${processPattern(check2.value)}$`), check2.message, refs);
+          break;
+        case "datetime":
+          addFormat(res, "date-time", check2.message, refs);
+          break;
+        case "date":
+          addFormat(res, "date", check2.message, refs);
+          break;
+        case "time":
+          addFormat(res, "time", check2.message, refs);
+          break;
+        case "duration":
+          addFormat(res, "duration", check2.message, refs);
+          break;
+        case "length":
+          setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number" ? Math.max(res.minLength, check2.value) : check2.value, check2.message, refs);
+          setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number" ? Math.min(res.maxLength, check2.value) : check2.value, check2.message, refs);
+          break;
+        case "includes": {
+          addPattern(res, RegExp(processPattern(check2.value)), check2.message, refs);
+          break;
+        }
+        case "ip": {
+          if (check2.version !== "v6") {
+            addFormat(res, "ipv4", check2.message, refs);
+          }
+          if (check2.version !== "v4") {
+            addFormat(res, "ipv6", check2.message, refs);
+          }
+          break;
+        }
+        case "emoji":
+          addPattern(res, zodPatterns.emoji, check2.message, refs);
+          break;
+        case "ulid": {
+          addPattern(res, zodPatterns.ulid, check2.message, refs);
+          break;
+        }
+        case "base64": {
+          switch (refs.base64Strategy) {
+            case "format:binary": {
+              addFormat(res, "binary", check2.message, refs);
+              break;
+            }
+            case "contentEncoding:base64": {
+              setResponseValueAndErrors(res, "contentEncoding", "base64", check2.message, refs);
+              break;
+            }
+            case "pattern:zod": {
+              addPattern(res, zodPatterns.base64, check2.message, refs);
+              break;
+            }
+          }
+          break;
+        }
+        case "nanoid": {
+          addPattern(res, zodPatterns.nanoid, check2.message, refs);
+        }
+        case "toLowerCase":
+        case "toUpperCase":
+        case "trim":
+          break;
+        default:
+          /* @__PURE__ */ ((_) => {
+          })(check2);
+      }
+    }
+  }
+  return res;
+}
+var escapeNonAlphaNumeric = (value) => Array.from(value).map((c) => /[a-zA-Z0-9]/.test(c) ? c : `\\${c}`).join("");
+var addFormat = (schema, value, message, refs) => {
+  if (schema.format || schema.anyOf?.some((x) => x.format)) {
+    if (!schema.anyOf) {
+      schema.anyOf = [];
+    }
+    if (schema.format) {
+      schema.anyOf.push({
+        format: schema.format,
+        ...schema.errorMessage && refs.errorMessages && {
+          errorMessage: { format: schema.errorMessage.format }
+        }
+      });
+      delete schema.format;
+      if (schema.errorMessage) {
+        delete schema.errorMessage.format;
+        if (Object.keys(schema.errorMessage).length === 0) {
+          delete schema.errorMessage;
+        }
+      }
+    }
+    schema.anyOf.push({
+      format: value,
+      ...message && refs.errorMessages && { errorMessage: { format: message } }
+    });
+  } else {
+    setResponseValueAndErrors(schema, "format", value, message, refs);
+  }
+};
+var addPattern = (schema, regex, message, refs) => {
+  if (schema.pattern || schema.allOf?.some((x) => x.pattern)) {
+    if (!schema.allOf) {
+      schema.allOf = [];
+    }
+    if (schema.pattern) {
+      schema.allOf.push({
+        pattern: schema.pattern,
+        ...schema.errorMessage && refs.errorMessages && {
+          errorMessage: { pattern: schema.errorMessage.pattern }
+        }
+      });
+      delete schema.pattern;
+      if (schema.errorMessage) {
+        delete schema.errorMessage.pattern;
+        if (Object.keys(schema.errorMessage).length === 0) {
+          delete schema.errorMessage;
+        }
+      }
+    }
+    schema.allOf.push({
+      pattern: processRegExp(regex, refs),
+      ...message && refs.errorMessages && { errorMessage: { pattern: message } }
+    });
+  } else {
+    setResponseValueAndErrors(schema, "pattern", processRegExp(regex, refs), message, refs);
+  }
+};
+var processRegExp = (regexOrFunction, refs) => {
+  const regex = typeof regexOrFunction === "function" ? regexOrFunction() : regexOrFunction;
+  if (!refs.applyRegexFlags || !regex.flags)
+    return regex.source;
+  const flags = {
+    i: regex.flags.includes("i"),
+    // Case-insensitive
+    m: regex.flags.includes("m"),
+    // `^` and `$` matches adjacent to newline characters
+    s: regex.flags.includes("s")
+    // `.` matches newlines
+  };
+  const source = flags.i ? regex.source.toLowerCase() : regex.source;
+  let pattern = "";
+  let isEscaped = false;
+  let inCharGroup = false;
+  let inCharRange = false;
+  for (let i = 0; i < source.length; i++) {
+    if (isEscaped) {
+      pattern += source[i];
+      isEscaped = false;
+      continue;
+    }
+    if (flags.i) {
+      if (inCharGroup) {
+        if (source[i].match(/[a-z]/)) {
+          if (inCharRange) {
+            pattern += source[i];
+            pattern += `${source[i - 2]}-${source[i]}`.toUpperCase();
+            inCharRange = false;
+          } else if (source[i + 1] === "-" && source[i + 2]?.match(/[a-z]/)) {
+            pattern += source[i];
+            inCharRange = true;
+          } else {
+            pattern += `${source[i]}${source[i].toUpperCase()}`;
+          }
+          continue;
+        }
+      } else if (source[i].match(/[a-z]/)) {
+        pattern += `[${source[i]}${source[i].toUpperCase()}]`;
+        continue;
+      }
+    }
+    if (flags.m) {
+      if (source[i] === "^") {
+        pattern += `(^|(?<=[\r
+]))`;
+        continue;
+      } else if (source[i] === "$") {
+        pattern += `($|(?=[\r
+]))`;
+        continue;
+      }
+    }
+    if (flags.s && source[i] === ".") {
+      pattern += inCharGroup ? `${source[i]}\r
+` : `[${source[i]}\r
+]`;
+      continue;
+    }
+    pattern += source[i];
+    if (source[i] === "\\") {
+      isEscaped = true;
+    } else if (inCharGroup && source[i] === "]") {
+      inCharGroup = false;
+    } else if (!inCharGroup && source[i] === "[") {
+      inCharGroup = true;
+    }
+  }
+  try {
+    const regexTest = new RegExp(pattern);
+  } catch {
+    console.warn(`Could not convert regex pattern at ${refs.currentPath.join("/")} to a flag-independent form! Falling back to the flag-ignorant source`);
+    return regex.source;
+  }
+  return pattern;
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/record.mjs
+function parseRecordDef(def, refs) {
+  if (refs.target === "openApi3" && def.keyType?._def.typeName === ZodFirstPartyTypeKind2.ZodEnum) {
+    return {
+      type: "object",
+      required: def.keyType._def.values,
+      properties: def.keyType._def.values.reduce((acc, key) => ({
+        ...acc,
+        [key]: parseDef(def.valueType._def, {
+          ...refs,
+          currentPath: [...refs.currentPath, "properties", key]
+        }) ?? {}
+      }), {}),
+      additionalProperties: false
+    };
+  }
+  const schema = {
+    type: "object",
+    additionalProperties: parseDef(def.valueType._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "additionalProperties"]
+    }) ?? {}
+  };
+  if (refs.target === "openApi3") {
+    return schema;
+  }
+  if (def.keyType?._def.typeName === ZodFirstPartyTypeKind2.ZodString && def.keyType._def.checks?.length) {
+    const keyType = Object.entries(parseStringDef(def.keyType._def, refs)).reduce((acc, [key, value]) => key === "type" ? acc : { ...acc, [key]: value }, {});
+    return {
+      ...schema,
+      propertyNames: keyType
+    };
+  } else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind2.ZodEnum) {
+    return {
+      ...schema,
+      propertyNames: {
+        enum: def.keyType._def.values
+      }
+    };
+  }
+  return schema;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/map.mjs
+function parseMapDef(def, refs) {
+  if (refs.mapStrategy === "record") {
+    return parseRecordDef(def, refs);
+  }
+  const keys = parseDef(def.keyType._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "items", "items", "0"]
+  }) || {};
+  const values = parseDef(def.valueType._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "items", "items", "1"]
+  }) || {};
+  return {
+    type: "array",
+    maxItems: 125,
+    items: {
+      type: "array",
+      items: [keys, values],
+      minItems: 2,
+      maxItems: 2
+    }
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/nativeEnum.mjs
+function parseNativeEnumDef(def) {
+  const object2 = def.values;
+  const actualKeys = Object.keys(def.values).filter((key) => {
+    return typeof object2[object2[key]] !== "number";
+  });
+  const actualValues = actualKeys.map((key) => object2[key]);
+  const parsedTypes = Array.from(new Set(actualValues.map((values) => typeof values)));
+  return {
+    type: parsedTypes.length === 1 ? parsedTypes[0] === "string" ? "string" : "number" : ["string", "number"],
+    enum: actualValues
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/never.mjs
+function parseNeverDef() {
+  return {
+    not: {}
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/null.mjs
+function parseNullDef(refs) {
+  return refs.target === "openApi3" ? {
+    enum: ["null"],
+    nullable: true
+  } : {
+    type: "null"
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/union.mjs
+var primitiveMappings = {
+  ZodString: "string",
+  ZodNumber: "number",
+  ZodBigInt: "integer",
+  ZodBoolean: "boolean",
+  ZodNull: "null"
+};
+function parseUnionDef(def, refs) {
+  if (refs.target === "openApi3")
+    return asAnyOf(def, refs);
+  const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
+  if (options.every((x) => x._def.typeName in primitiveMappings && (!x._def.checks || !x._def.checks.length))) {
+    const types = options.reduce((types2, x) => {
+      const type = primitiveMappings[x._def.typeName];
+      return type && !types2.includes(type) ? [...types2, type] : types2;
+    }, []);
+    return {
+      type: types.length > 1 ? types : types[0]
+    };
+  } else if (options.every((x) => x._def.typeName === "ZodLiteral" && !x.description)) {
+    const types = options.reduce((acc, x) => {
+      const type = typeof x._def.value;
+      switch (type) {
+        case "string":
+        case "number":
+        case "boolean":
+          return [...acc, type];
+        case "bigint":
+          return [...acc, "integer"];
+        case "object":
+          if (x._def.value === null)
+            return [...acc, "null"];
+        case "symbol":
+        case "undefined":
+        case "function":
+        default:
+          return acc;
+      }
+    }, []);
+    if (types.length === options.length) {
+      const uniqueTypes = types.filter((x, i, a) => a.indexOf(x) === i);
+      return {
+        type: uniqueTypes.length > 1 ? uniqueTypes : uniqueTypes[0],
+        enum: options.reduce((acc, x) => {
+          return acc.includes(x._def.value) ? acc : [...acc, x._def.value];
+        }, [])
+      };
+    }
+  } else if (options.every((x) => x._def.typeName === "ZodEnum")) {
+    return {
+      type: "string",
+      enum: options.reduce((acc, x) => [...acc, ...x._def.values.filter((x2) => !acc.includes(x2))], [])
+    };
+  }
+  return asAnyOf(def, refs);
+}
+var asAnyOf = (def, refs) => {
+  const anyOf = (def.options instanceof Map ? Array.from(def.options.values()) : def.options).map((x, i) => parseDef(x._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "anyOf", `${i}`]
+  })).filter((x) => !!x && (!refs.strictUnions || typeof x === "object" && Object.keys(x).length > 0));
+  return anyOf.length ? { anyOf } : void 0;
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/nullable.mjs
+function parseNullableDef(def, refs) {
+  if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) && (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
+    if (refs.target === "openApi3" || refs.nullableStrategy === "property") {
+      return {
+        type: primitiveMappings[def.innerType._def.typeName],
+        nullable: true
+      };
+    }
+    return {
+      type: [primitiveMappings[def.innerType._def.typeName], "null"]
+    };
+  }
+  if (refs.target === "openApi3") {
+    const base2 = parseDef(def.innerType._def, {
+      ...refs,
+      currentPath: [...refs.currentPath]
+    });
+    if (base2 && "$ref" in base2)
+      return { allOf: [base2], nullable: true };
+    return base2 && { ...base2, nullable: true };
+  }
+  const base = parseDef(def.innerType._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "anyOf", "0"]
+  });
+  return base && { anyOf: [base, { type: "null" }] };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/number.mjs
+function parseNumberDef(def, refs) {
+  const res = {
+    type: "number"
+  };
+  if (!def.checks)
+    return res;
+  for (const check2 of def.checks) {
+    switch (check2.kind) {
+      case "int":
+        res.type = "integer";
+        addErrorMessage(res, "type", check2.message, refs);
+        break;
+      case "min":
+        if (refs.target === "jsonSchema7") {
+          if (check2.inclusive) {
+            setResponseValueAndErrors(res, "minimum", check2.value, check2.message, refs);
+          } else {
+            setResponseValueAndErrors(res, "exclusiveMinimum", check2.value, check2.message, refs);
+          }
+        } else {
+          if (!check2.inclusive) {
+            res.exclusiveMinimum = true;
+          }
+          setResponseValueAndErrors(res, "minimum", check2.value, check2.message, refs);
+        }
+        break;
+      case "max":
+        if (refs.target === "jsonSchema7") {
+          if (check2.inclusive) {
+            setResponseValueAndErrors(res, "maximum", check2.value, check2.message, refs);
+          } else {
+            setResponseValueAndErrors(res, "exclusiveMaximum", check2.value, check2.message, refs);
+          }
+        } else {
+          if (!check2.inclusive) {
+            res.exclusiveMaximum = true;
+          }
+          setResponseValueAndErrors(res, "maximum", check2.value, check2.message, refs);
+        }
+        break;
+      case "multipleOf":
+        setResponseValueAndErrors(res, "multipleOf", check2.value, check2.message, refs);
+        break;
+    }
+  }
+  return res;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/object.mjs
+function decideAdditionalProperties(def, refs) {
+  if (refs.removeAdditionalStrategy === "strict") {
+    return def.catchall._def.typeName === "ZodNever" ? def.unknownKeys !== "strict" : parseDef(def.catchall._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "additionalProperties"]
+    }) ?? true;
+  } else {
+    return def.catchall._def.typeName === "ZodNever" ? def.unknownKeys === "passthrough" : parseDef(def.catchall._def, {
+      ...refs,
+      currentPath: [...refs.currentPath, "additionalProperties"]
+    }) ?? true;
+  }
+}
+function parseObjectDef(def, refs) {
+  const result = {
+    type: "object",
+    ...Object.entries(def.shape()).reduce((acc, [propName, propDef]) => {
+      if (propDef === void 0 || propDef._def === void 0)
+        return acc;
+      const propertyPath = [...refs.currentPath, "properties", propName];
+      const parsedDef = parseDef(propDef._def, {
+        ...refs,
+        currentPath: propertyPath,
+        propertyPath
+      });
+      if (parsedDef === void 0)
+        return acc;
+      if (refs.openaiStrictMode && propDef.isOptional() && !propDef.isNullable() && typeof propDef._def?.defaultValue === "undefined") {
+        throw new Error(`Zod field at \`${propertyPath.join("/")}\` uses \`.optional()\` without \`.nullable()\` which is not supported by the API. See: https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses#all-fields-must-be-required`);
+      }
+      return {
+        properties: {
+          ...acc.properties,
+          [propName]: parsedDef
+        },
+        required: propDef.isOptional() && !refs.openaiStrictMode ? acc.required : [...acc.required, propName]
+      };
+    }, { properties: {}, required: [] }),
+    additionalProperties: decideAdditionalProperties(def, refs)
+  };
+  if (!result.required.length)
+    delete result.required;
+  return result;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/optional.mjs
+var parseOptionalDef = (def, refs) => {
+  if (refs.propertyPath && refs.currentPath.slice(0, refs.propertyPath.length).toString() === refs.propertyPath.toString()) {
+    return parseDef(def.innerType._def, { ...refs, currentPath: refs.currentPath });
+  }
+  const innerSchema = parseDef(def.innerType._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "anyOf", "1"]
+  });
+  return innerSchema ? {
+    anyOf: [
+      {
+        not: {}
+      },
+      innerSchema
+    ]
+  } : {};
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/pipeline.mjs
+var parsePipelineDef = (def, refs) => {
+  if (refs.pipeStrategy === "input") {
+    return parseDef(def.in._def, refs);
+  } else if (refs.pipeStrategy === "output") {
+    return parseDef(def.out._def, refs);
+  }
+  const a = parseDef(def.in._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "allOf", "0"]
+  });
+  const b = parseDef(def.out._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "allOf", a ? "1" : "0"]
+  });
+  return {
+    allOf: [a, b].filter((x) => x !== void 0)
+  };
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/promise.mjs
+function parsePromiseDef(def, refs) {
+  return parseDef(def.type._def, refs);
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/set.mjs
+function parseSetDef(def, refs) {
+  const items = parseDef(def.valueType._def, {
+    ...refs,
+    currentPath: [...refs.currentPath, "items"]
+  });
+  const schema = {
+    type: "array",
+    uniqueItems: true,
+    items
+  };
+  if (def.minSize) {
+    setResponseValueAndErrors(schema, "minItems", def.minSize.value, def.minSize.message, refs);
+  }
+  if (def.maxSize) {
+    setResponseValueAndErrors(schema, "maxItems", def.maxSize.value, def.maxSize.message, refs);
+  }
+  return schema;
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/tuple.mjs
+function parseTupleDef(def, refs) {
+  if (def.rest) {
+    return {
+      type: "array",
+      minItems: def.items.length,
+      items: def.items.map((x, i) => parseDef(x._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "items", `${i}`]
+      })).reduce((acc, x) => x === void 0 ? acc : [...acc, x], []),
+      additionalItems: parseDef(def.rest._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "additionalItems"]
+      })
+    };
+  } else {
+    return {
+      type: "array",
+      minItems: def.items.length,
+      maxItems: def.items.length,
+      items: def.items.map((x, i) => parseDef(x._def, {
+        ...refs,
+        currentPath: [...refs.currentPath, "items", `${i}`]
+      })).reduce((acc, x) => x === void 0 ? acc : [...acc, x], [])
+    };
+  }
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/undefined.mjs
+function parseUndefinedDef() {
+  return {
+    not: {}
+  };
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/unknown.mjs
+function parseUnknownDef() {
+  return {};
+}
+
+// node_modules/openai/_vendor/zod-to-json-schema/parsers/readonly.mjs
+var parseReadonlyDef = (def, refs) => {
+  return parseDef(def.innerType._def, refs);
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/parseDef.mjs
+function parseDef(def, refs, forceResolution = false) {
+  const seenItem = refs.seen.get(def);
+  if (refs.override) {
+    const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
+    if (overrideResult !== ignoreOverride) {
+      return overrideResult;
+    }
+  }
+  if (seenItem && !forceResolution) {
+    const seenSchema = get$ref(seenItem, refs);
+    if (seenSchema !== void 0) {
+      if ("$ref" in seenSchema) {
+        refs.seenRefs.add(seenSchema.$ref);
+      }
+      return seenSchema;
+    }
+  }
+  const newItem = { def, path: refs.currentPath, jsonSchema: void 0 };
+  refs.seen.set(def, newItem);
+  const jsonSchema = selectParser(def, def.typeName, refs, forceResolution);
+  if (jsonSchema) {
+    addMeta(def, refs, jsonSchema);
+  }
+  newItem.jsonSchema = jsonSchema;
+  return jsonSchema;
+}
+var get$ref = (item, refs) => {
+  switch (refs.$refStrategy) {
+    case "root":
+      return { $ref: item.path.join("/") };
+    // this case is needed as OpenAI strict mode doesn't support top-level `$ref`s, i.e.
+    // the top-level schema *must* be `{"type": "object", "properties": {...}}` but if we ever
+    // need to define a `$ref`, relative `$ref`s aren't supported, so we need to extract
+    // the schema to `#/definitions/` and reference that.
+    //
+    // e.g. if we need to reference a schema at
+    // `["#","definitions","contactPerson","properties","person1","properties","name"]`
+    // then we'll extract it out to `contactPerson_properties_person1_properties_name`
+    case "extract-to-root":
+      const name = item.path.slice(refs.basePath.length + 1).join("_");
+      if (name !== refs.name && refs.nameStrategy === "duplicate-ref") {
+        refs.definitions[name] = item.def;
+      }
+      return { $ref: [...refs.basePath, refs.definitionPath, name].join("/") };
+    case "relative":
+      return { $ref: getRelativePath(refs.currentPath, item.path) };
+    case "none":
+    case "seen": {
+      if (item.path.length < refs.currentPath.length && item.path.every((value, index) => refs.currentPath[index] === value)) {
+        console.warn(`Recursive reference detected at ${refs.currentPath.join("/")}! Defaulting to any`);
+        return {};
+      }
+      return refs.$refStrategy === "seen" ? {} : void 0;
+    }
+  }
+};
+var getRelativePath = (pathA, pathB) => {
+  let i = 0;
+  for (; i < pathA.length && i < pathB.length; i++) {
+    if (pathA[i] !== pathB[i])
+      break;
+  }
+  return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
+};
+var selectParser = (def, typeName, refs, forceResolution) => {
+  switch (typeName) {
+    case ZodFirstPartyTypeKind2.ZodString:
+      return parseStringDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodNumber:
+      return parseNumberDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodObject:
+      return parseObjectDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodBigInt:
+      return parseBigintDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodBoolean:
+      return parseBooleanDef();
+    case ZodFirstPartyTypeKind2.ZodDate:
+      return parseDateDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodUndefined:
+      return parseUndefinedDef();
+    case ZodFirstPartyTypeKind2.ZodNull:
+      return parseNullDef(refs);
+    case ZodFirstPartyTypeKind2.ZodArray:
+      return parseArrayDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodUnion:
+    case ZodFirstPartyTypeKind2.ZodDiscriminatedUnion:
+      return parseUnionDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodIntersection:
+      return parseIntersectionDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodTuple:
+      return parseTupleDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodRecord:
+      return parseRecordDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodLiteral:
+      return parseLiteralDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodEnum:
+      return parseEnumDef(def);
+    case ZodFirstPartyTypeKind2.ZodNativeEnum:
+      return parseNativeEnumDef(def);
+    case ZodFirstPartyTypeKind2.ZodNullable:
+      return parseNullableDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodOptional:
+      return parseOptionalDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodMap:
+      return parseMapDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodSet:
+      return parseSetDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodLazy:
+      return parseDef(def.getter()._def, refs);
+    case ZodFirstPartyTypeKind2.ZodPromise:
+      return parsePromiseDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodNaN:
+    case ZodFirstPartyTypeKind2.ZodNever:
+      return parseNeverDef();
+    case ZodFirstPartyTypeKind2.ZodEffects:
+      return parseEffectsDef(def, refs, forceResolution);
+    case ZodFirstPartyTypeKind2.ZodAny:
+      return parseAnyDef();
+    case ZodFirstPartyTypeKind2.ZodUnknown:
+      return parseUnknownDef();
+    case ZodFirstPartyTypeKind2.ZodDefault:
+      return parseDefaultDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodBranded:
+      return parseBrandedDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodReadonly:
+      return parseReadonlyDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodCatch:
+      return parseCatchDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodPipeline:
+      return parsePipelineDef(def, refs);
+    case ZodFirstPartyTypeKind2.ZodFunction:
+    case ZodFirstPartyTypeKind2.ZodVoid:
+    case ZodFirstPartyTypeKind2.ZodSymbol:
+      return void 0;
+    default:
+      return /* @__PURE__ */ ((_) => void 0)(typeName);
+  }
+};
+var addMeta = (def, refs, jsonSchema) => {
+  if (def.description) {
+    jsonSchema.description = def.description;
+    if (refs.markdownDescription) {
+      jsonSchema.markdownDescription = def.description;
+    }
+  }
+  return jsonSchema;
+};
+
+// node_modules/openai/_vendor/zod-to-json-schema/zodToJsonSchema.mjs
+var zodToJsonSchema = (schema, options) => {
+  const refs = getRefs(options);
+  const name = typeof options === "string" ? options : options?.nameStrategy === "title" ? void 0 : options?.name;
+  const main = parseDef(schema._def, name === void 0 ? refs : {
+    ...refs,
+    currentPath: [...refs.basePath, refs.definitionPath, name]
+  }, false) ?? {};
+  const title = typeof options === "object" && options.name !== void 0 && options.nameStrategy === "title" ? options.name : void 0;
+  if (title !== void 0) {
+    main.title = title;
+  }
+  const definitions = (() => {
+    if (isEmptyObj(refs.definitions)) {
+      return void 0;
+    }
+    const definitions2 = {};
+    const processedDefinitions = /* @__PURE__ */ new Set();
+    for (let i = 0; i < 500; i++) {
+      const newDefinitions = Object.entries(refs.definitions).filter(([key]) => !processedDefinitions.has(key));
+      if (newDefinitions.length === 0)
+        break;
+      for (const [key, schema2] of newDefinitions) {
+        definitions2[key] = parseDef(zodDef(schema2), { ...refs, currentPath: [...refs.basePath, refs.definitionPath, key] }, true) ?? {};
+        processedDefinitions.add(key);
+      }
+    }
+    return definitions2;
+  })();
+  const combined = name === void 0 ? definitions ? {
+    ...main,
+    [refs.definitionPath]: definitions
+  } : main : refs.nameStrategy === "duplicate-ref" ? {
+    ...main,
+    ...definitions || refs.seenRefs.size ? {
+      [refs.definitionPath]: {
+        ...definitions,
+        // only actually duplicate the schema definition if it was ever referenced
+        // otherwise the duplication is completely pointless
+        ...refs.seenRefs.size ? { [name]: main } : void 0
+      }
+    } : void 0
+  } : {
+    $ref: [...refs.$refStrategy === "relative" ? [] : refs.basePath, refs.definitionPath, name].join("/"),
+    [refs.definitionPath]: {
+      ...definitions,
+      [name]: main
+    }
+  };
+  if (refs.target === "jsonSchema7") {
+    combined.$schema = "http://json-schema.org/draft-07/schema#";
+  } else if (refs.target === "jsonSchema2019-09") {
+    combined.$schema = "https://json-schema.org/draft/2019-09/schema#";
+  }
+  return combined;
+};
+
+// node_modules/openai/lib/ResponsesParser.mjs
+function makeParseableResponseTool(tool2, { parser, callback }) {
+  const obj = { ...tool2 };
+  Object.defineProperties(obj, {
+    $brand: {
+      value: "auto-parseable-tool",
+      enumerable: false
+    },
+    $parseRaw: {
+      value: parser,
+      enumerable: false
+    },
+    $callback: {
+      value: callback,
+      enumerable: false
+    }
+  });
+  return obj;
+}
+
+// node_modules/openai/lib/transform.mjs
+function toStrictJsonSchema(schema) {
+  if (schema.type !== "object") {
+    throw new Error(`Root schema must have type: 'object' but got type: ${schema.type ? `'${schema.type}'` : "undefined"}`);
+  }
+  const schemaCopy = structuredClone(schema);
+  return ensureStrictJsonSchema(schemaCopy, [], schemaCopy);
+}
+function isNullable(schema) {
+  if (typeof schema === "boolean") {
+    return false;
+  }
+  if (schema.type === "null") {
+    return true;
+  }
+  for (const oneOfVariant of schema.oneOf ?? []) {
+    if (isNullable(oneOfVariant)) {
+      return true;
+    }
+  }
+  for (const allOfVariant of schema.anyOf ?? []) {
+    if (isNullable(allOfVariant)) {
+      return true;
+    }
+  }
+  return false;
+}
+function ensureStrictJsonSchema(jsonSchema, path, root) {
+  if (typeof jsonSchema === "boolean") {
+    throw new TypeError(`Expected object schema but got boolean; path=${path.join("/")}`);
+  }
+  if (!isObject2(jsonSchema)) {
+    throw new TypeError(`Expected ${JSON.stringify(jsonSchema)} to be an object; path=${path.join("/")}`);
+  }
+  const defs = jsonSchema.$defs;
+  if (isObject2(defs)) {
+    for (const [defName, defSchema] of Object.entries(defs)) {
+      ensureStrictJsonSchema(defSchema, [...path, "$defs", defName], root);
+    }
+  }
+  const definitions = jsonSchema.definitions;
+  if (isObject2(definitions)) {
+    for (const [definitionName, definitionSchema] of Object.entries(definitions)) {
+      ensureStrictJsonSchema(definitionSchema, [...path, "definitions", definitionName], root);
+    }
+  }
+  const typ = jsonSchema.type;
+  if (typ === "object" && !("additionalProperties" in jsonSchema)) {
+    jsonSchema.additionalProperties = false;
+  }
+  const required2 = jsonSchema.required ?? [];
+  const properties = jsonSchema.properties;
+  if (isObject2(properties)) {
+    for (const [key, value] of Object.entries(properties)) {
+      if (!isNullable(value) && !required2.includes(key)) {
+        throw new Error(`Zod field at \`${[...path, "properties", key].join("/")}\` uses \`.optional()\` without \`.nullable()\` which is not supported by the API. See: https://platform.openai.com/docs/guides/structured-outputs?api-mode=responses#all-fields-must-be-required`);
+      }
+    }
+    jsonSchema.required = Object.keys(properties);
+    jsonSchema.properties = Object.fromEntries(Object.entries(properties).map(([key, propSchema]) => [
+      key,
+      ensureStrictJsonSchema(propSchema, [...path, "properties", key], root)
+    ]));
+  }
+  const items = jsonSchema.items;
+  if (isObject2(items)) {
+    jsonSchema.items = ensureStrictJsonSchema(items, [...path, "items"], root);
+  }
+  const anyOf = jsonSchema.anyOf;
+  if (Array.isArray(anyOf)) {
+    jsonSchema.anyOf = anyOf.map((variant, i) => ensureStrictJsonSchema(variant, [...path, "anyOf", String(i)], root));
+  }
+  const allOf = jsonSchema.allOf;
+  if (Array.isArray(allOf)) {
+    if (allOf.length === 1) {
+      const resolved = ensureStrictJsonSchema(allOf[0], [...path, "allOf", "0"], root);
+      Object.assign(jsonSchema, resolved);
+      delete jsonSchema.allOf;
+    } else {
+      jsonSchema.allOf = allOf.map((entry, i) => ensureStrictJsonSchema(entry, [...path, "allOf", String(i)], root));
+    }
+  }
+  if (jsonSchema.default === null) {
+    delete jsonSchema.default;
+  }
+  const ref = jsonSchema.$ref;
+  if (ref && hasMoreThanNKeys(jsonSchema, 1)) {
+    if (typeof ref !== "string") {
+      throw new TypeError(`Received non-string $ref - ${ref}; path=${path.join("/")}`);
+    }
+    const resolved = resolveRef(root, ref);
+    if (typeof resolved === "boolean") {
+      throw new Error(`Expected \`$ref: ${ref}\` to resolve to an object schema but got boolean`);
+    }
+    if (!isObject2(resolved)) {
+      throw new Error(`Expected \`$ref: ${ref}\` to resolve to an object but got ${JSON.stringify(resolved)}`);
+    }
+    Object.assign(jsonSchema, { ...resolved, ...jsonSchema });
+    delete jsonSchema.$ref;
+    return ensureStrictJsonSchema(jsonSchema, path, root);
+  }
+  return jsonSchema;
+}
+function resolveRef(root, ref) {
+  if (!ref.startsWith("#/")) {
+    throw new Error(`Unexpected $ref format ${JSON.stringify(ref)}; Does not start with #/`);
+  }
+  const pathParts = ref.slice(2).split("/");
+  let resolved = root;
+  for (const key of pathParts) {
+    if (!isObject2(resolved)) {
+      throw new Error(`encountered non-object entry while resolving ${ref} - ${JSON.stringify(resolved)}`);
+    }
+    const value = resolved[key];
+    if (value === void 0) {
+      throw new Error(`Key ${key} not found while resolving ${ref}`);
+    }
+    resolved = value;
+  }
+  return resolved;
+}
+function isObject2(obj) {
+  return typeof obj === "object" && obj !== null && !Array.isArray(obj);
+}
+function hasMoreThanNKeys(obj, n) {
+  let i = 0;
+  for (const _ in obj) {
+    i++;
+    if (i > n) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// node_modules/openai/helpers/zod.mjs
+function zodV3ToJsonSchema(schema, options) {
+  return zodToJsonSchema(schema, {
+    openaiStrictMode: true,
+    name: options.name,
+    nameStrategy: "duplicate-ref",
+    $refStrategy: "extract-to-root",
+    nullableStrategy: "property"
+  });
+}
+function zodV4ToJsonSchema(schema) {
+  return toStrictJsonSchema(toJSONSchema(schema, {
+    target: "draft-7"
+  }));
+}
+function isZodV4(zodObject) {
+  return "_zod" in zodObject;
+}
+function zodTextFormat(zodObject, name, props) {
+  return makeParseableTextFormat({
+    type: "json_schema",
+    ...props,
+    name,
+    strict: true,
+    schema: isZodV4(zodObject) ? zodV4ToJsonSchema(zodObject) : zodV3ToJsonSchema(zodObject, { name })
+  }, (content) => zodObject.parse(JSON.parse(content)));
+}
+function zodResponsesFunction(options) {
+  return makeParseableResponseTool({
+    type: "function",
+    name: options.name,
+    parameters: isZodV4(options.parameters) ? zodV4ToJsonSchema(options.parameters) : zodV3ToJsonSchema(options.parameters, { name: options.name }),
+    strict: true,
+    ...options.description ? { description: options.description } : void 0
+  }, {
+    callback: options.function,
+    parser: (args) => options.parameters.parse(JSON.parse(args))
+  });
+}
+
 // node_modules/@openai/agents-core/dist/errors.mjs
 var AgentsError = class extends Error {
   constructor(message, state) {
@@ -17060,9 +18500,34 @@ var AgentsError = class extends Error {
     this.state = state;
   }
 };
+var SystemError = class extends AgentsError {
+};
+var MaxTurnsExceededError = class extends AgentsError {
+};
 var ModelBehaviorError = class extends AgentsError {
 };
 var UserError = class extends AgentsError {
+};
+var GuardrailExecutionError = class extends AgentsError {
+  constructor(message, error46, state) {
+    super(message, state);
+    __publicField(this, "error");
+    this.error = error46;
+  }
+};
+var ToolCallError = class extends AgentsError {
+  constructor(message, error46, state) {
+    super(message, state);
+    __publicField(this, "error");
+    this.error = error46;
+  }
+};
+var InputGuardrailTripwireTriggered = class extends AgentsError {
+  constructor(message, result, state) {
+    super(message, state);
+    __publicField(this, "result");
+    this.result = result;
+  }
 };
 var OutputGuardrailTripwireTriggered = class extends AgentsError {
   constructor(message, result, state) {
@@ -17073,6 +18538,9 @@ var OutputGuardrailTripwireTriggered = class extends AgentsError {
 };
 
 // node_modules/@openai/agents-core/dist/utils/zodCompat.mjs
+function asZodType(schema) {
+  return schema;
+}
 function readZodDefinition(input) {
   if (typeof input !== "object" || input === null) {
     return void 0;
@@ -17101,6 +18569,352 @@ function isZodObject(input) {
   }
   const type = readZodType(input);
   return type === "object";
+}
+function isAgentToolInput(input) {
+  return typeof input === "object" && input !== null && "input" in input && typeof input.input === "string";
+}
+
+// node_modules/@openai/agents-core/dist/utils/zodJsonSchemaCompat.mjs
+var JSON_SCHEMA_DRAFT_07 = "http://json-schema.org/draft-07/schema#";
+var OPTIONAL_WRAPPERS = /* @__PURE__ */ new Set(["optional"]);
+var DECORATOR_WRAPPERS = /* @__PURE__ */ new Set([
+  "brand",
+  "branded",
+  "catch",
+  "default",
+  "effects",
+  "pipeline",
+  "pipe",
+  "prefault",
+  "readonly",
+  "refinement",
+  "transform"
+]);
+var SIMPLE_TYPE_MAPPING = {
+  string: { type: "string" },
+  number: { type: "number" },
+  bigint: { type: "integer" },
+  boolean: { type: "boolean" },
+  date: { type: "string", format: "date-time" }
+};
+function hasJsonSchemaObjectShape(value) {
+  return typeof value === "object" && value !== null && value.type === "object" && "properties" in value && "additionalProperties" in value;
+}
+function zodJsonSchemaCompat(input) {
+  const schema = buildObjectSchema(input);
+  if (!schema) {
+    return void 0;
+  }
+  if (!Array.isArray(schema.required)) {
+    schema.required = [];
+  }
+  if (typeof schema.additionalProperties === "undefined") {
+    schema.additionalProperties = false;
+  }
+  if (typeof schema.$schema !== "string") {
+    schema.$schema = JSON_SCHEMA_DRAFT_07;
+  }
+  return schema;
+}
+function buildObjectSchema(value) {
+  const shape = readShape(value);
+  if (!shape) {
+    return void 0;
+  }
+  const properties = {};
+  const required2 = [];
+  for (const [key, field] of Object.entries(shape)) {
+    const { schema, optional: optional2 } = convertProperty(field);
+    if (!schema) {
+      return void 0;
+    }
+    properties[key] = schema;
+    if (!optional2) {
+      required2.push(key);
+    }
+  }
+  return { type: "object", properties, required: required2, additionalProperties: false };
+}
+function convertProperty(value) {
+  let current = unwrapDecorators(value);
+  let optional2 = false;
+  while (OPTIONAL_WRAPPERS.has(readZodType(current) ?? "")) {
+    optional2 = true;
+    const def = readZodDefinition(current);
+    const next = unwrapDecorators(def?.innerType);
+    if (!next || next === current) {
+      break;
+    }
+    current = next;
+  }
+  return { schema: convertSchema(current), optional: optional2 };
+}
+function convertSchema(value) {
+  if (value === void 0) {
+    return void 0;
+  }
+  const unwrapped = unwrapDecorators(value);
+  const type = readZodType(unwrapped);
+  const def = readZodDefinition(unwrapped);
+  if (!type) {
+    return void 0;
+  }
+  if (type in SIMPLE_TYPE_MAPPING) {
+    return SIMPLE_TYPE_MAPPING[type];
+  }
+  switch (type) {
+    case "object":
+      return buildObjectSchema(unwrapped);
+    case "array":
+      return buildArraySchema(def);
+    case "tuple":
+      return buildTupleSchema(def);
+    case "union":
+      return buildUnionSchema(def);
+    case "intersection":
+      return buildIntersectionSchema(def);
+    case "literal":
+      return buildLiteral(def);
+    case "enum":
+    case "nativeenum":
+      return buildEnum(def);
+    case "record":
+      return buildRecordSchema(def);
+    case "map":
+      return buildMapSchema(def);
+    case "set":
+      return buildSetSchema(def);
+    case "nullable":
+      return buildNullableSchema(def);
+    default:
+      return void 0;
+  }
+}
+function buildArraySchema(def) {
+  const items = convertSchema(extractFirst(def, "element", "items", "type"));
+  return items ? { type: "array", items } : void 0;
+}
+function buildTupleSchema(def) {
+  const items = coerceArray(def?.items).map((item) => convertSchema(item)).filter(Boolean);
+  if (!items.length) {
+    return void 0;
+  }
+  const schema = {
+    type: "array",
+    items,
+    minItems: items.length
+  };
+  if (!def?.rest) {
+    schema.maxItems = items.length;
+  }
+  return schema;
+}
+function buildUnionSchema(def) {
+  const options = coerceArray(def?.options ?? def?.schemas).map((option) => convertSchema(option)).filter(Boolean);
+  return options.length ? { anyOf: options } : void 0;
+}
+function buildIntersectionSchema(def) {
+  const left = convertSchema(def?.left);
+  const right = convertSchema(def?.right);
+  return left && right ? { allOf: [left, right] } : void 0;
+}
+function buildRecordSchema(def) {
+  const valueSchema = convertSchema(def?.valueType ?? def?.values);
+  return valueSchema ? { type: "object", additionalProperties: valueSchema } : void 0;
+}
+function buildMapSchema(def) {
+  const valueSchema = convertSchema(def?.valueType ?? def?.values);
+  return valueSchema ? { type: "array", items: valueSchema } : void 0;
+}
+function buildSetSchema(def) {
+  const valueSchema = convertSchema(def?.valueType);
+  return valueSchema ? { type: "array", items: valueSchema, uniqueItems: true } : void 0;
+}
+function buildNullableSchema(def) {
+  const inner = convertSchema(def?.innerType ?? def?.type);
+  return inner ? { anyOf: [inner, { type: "null" }] } : void 0;
+}
+function unwrapDecorators(value) {
+  let current = value;
+  while (DECORATOR_WRAPPERS.has(readZodType(current) ?? "")) {
+    const def = readZodDefinition(current);
+    const next = def?.innerType ?? def?.schema ?? def?.base ?? def?.type ?? def?.wrapped ?? def?.underlying;
+    if (!next || next === current) {
+      return current;
+    }
+    current = next;
+  }
+  return current;
+}
+function extractFirst(def, ...keys) {
+  if (!def) {
+    return void 0;
+  }
+  for (const key of keys) {
+    if (key in def && def[key] !== void 0) {
+      return def[key];
+    }
+  }
+  return void 0;
+}
+function coerceArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return value === void 0 ? [] : [value];
+}
+function buildLiteral(def) {
+  if (!def) {
+    return void 0;
+  }
+  const literal2 = extractFirst(def, "value", "literal");
+  if (literal2 === void 0) {
+    return void 0;
+  }
+  return {
+    const: literal2,
+    type: literal2 === null ? "null" : typeof literal2
+  };
+}
+function buildEnum(def) {
+  if (!def) {
+    return void 0;
+  }
+  if (Array.isArray(def.values)) {
+    return { enum: def.values };
+  }
+  if (Array.isArray(def.options)) {
+    return { enum: def.options };
+  }
+  if (def.values && typeof def.values === "object") {
+    return { enum: Object.values(def.values) };
+  }
+  if (def.enum && typeof def.enum === "object") {
+    return { enum: Object.values(def.enum) };
+  }
+  return void 0;
+}
+function readShape(input) {
+  if (typeof input !== "object" || input === null) {
+    return void 0;
+  }
+  const candidate = input;
+  if (candidate.shape && typeof candidate.shape === "object") {
+    return candidate.shape;
+  }
+  if (typeof candidate.shape === "function") {
+    try {
+      return candidate.shape();
+    } catch (_error3) {
+      return void 0;
+    }
+  }
+  const def = readZodDefinition(candidate);
+  const shape = def?.shape;
+  if (shape && typeof shape === "object") {
+    return shape;
+  }
+  if (typeof shape === "function") {
+    try {
+      return shape();
+    } catch (_error3) {
+      return void 0;
+    }
+  }
+  return void 0;
+}
+
+// node_modules/@openai/agents-core/dist/utils/tools.mjs
+var zodResponsesFunctionCompat = zodResponsesFunction;
+var zodTextFormatCompat = zodTextFormat;
+function buildJsonSchemaFromZod(inputType) {
+  return zodJsonSchemaCompat(inputType);
+}
+function toFunctionToolName(name) {
+  name = name.replace(/\s/g, "_");
+  name = name.replace(/[^a-zA-Z0-9]/g, "_");
+  if (name.length === 0) {
+    throw new Error("Tool name cannot be empty");
+  }
+  return name;
+}
+function getSchemaAndParserFromInputType(inputType, name) {
+  const parser = (input) => JSON.parse(input);
+  if (isZodObject(inputType)) {
+    const useFallback = (originalError) => {
+      const fallbackSchema = buildJsonSchemaFromZod(inputType);
+      if (fallbackSchema) {
+        return {
+          schema: fallbackSchema,
+          parser: (rawInput) => inputType.parse(JSON.parse(rawInput))
+        };
+      }
+      const errorMessage = originalError instanceof Error ? ` Upstream helper error: ${originalError.message}` : "";
+      throw new UserError(`Unable to convert the provided Zod schema to JSON Schema. Ensure that the \`zod\` package is available at runtime or provide a JSON schema object instead.${errorMessage}`);
+    };
+    let formattedFunction;
+    try {
+      formattedFunction = zodResponsesFunctionCompat({
+        name,
+        parameters: asZodType(inputType),
+        function: () => {
+        },
+        // empty function here to satisfy the OpenAI helper
+        description: ""
+      });
+    } catch (error46) {
+      return useFallback(error46);
+    }
+    if (hasJsonSchemaObjectShape(formattedFunction.parameters)) {
+      return {
+        schema: formattedFunction.parameters,
+        parser: formattedFunction.$parseRaw
+      };
+    }
+    return useFallback();
+  } else if (typeof inputType === "object" && inputType !== null) {
+    return {
+      schema: inputType,
+      parser
+    };
+  }
+  throw new UserError("Input type is not a ZodObject or a valid JSON schema");
+}
+function convertAgentOutputTypeToSerializable(outputType) {
+  if (outputType === "text") {
+    return "text";
+  }
+  if (isZodObject(outputType)) {
+    const useFallback = (existing, originalError) => {
+      const fallbackSchema = buildJsonSchemaFromZod(outputType);
+      if (fallbackSchema) {
+        return {
+          type: existing?.type ?? "json_schema",
+          name: existing?.name ?? "output",
+          strict: existing?.strict ?? false,
+          schema: fallbackSchema
+        };
+      }
+      const errorMessage = originalError instanceof Error ? ` Upstream helper error: ${originalError.message}` : "";
+      throw new UserError(`Unable to convert the provided Zod schema to JSON Schema. Ensure that the \`zod\` package is available at runtime or provide a JSON schema object instead.${errorMessage}`);
+    };
+    let output;
+    try {
+      output = zodTextFormatCompat(asZodType(outputType), "output");
+    } catch (error46) {
+      return useFallback(void 0, error46);
+    }
+    if (hasJsonSchemaObjectShape(output.schema)) {
+      return {
+        type: output.type,
+        name: output.name,
+        strict: output.strict || false,
+        schema: output.schema
+      };
+    }
+    return useFallback(output);
+  }
+  return outputType;
 }
 
 // node_modules/@openai/agents-core/dist/logger.mjs
@@ -17187,6 +19001,10 @@ function isArrayBufferView(value) {
 function isSerializedBufferSnapshot(value) {
   return typeof value === "object" && value !== null && value.type === "Buffer" && Array.isArray(value.data);
 }
+function isNodeBuffer(value) {
+  const bufferCtor = globalThis.Buffer;
+  return Boolean(bufferCtor && typeof bufferCtor.isBuffer === "function" && bufferCtor.isBuffer(value));
+}
 function formatByteArray(bytes) {
   if (bytes.length === 0) {
     return "[byte array (0 bytes)]";
@@ -17217,6 +19035,80 @@ function smartStringReplacer(_key, nestedValue) {
   return nestedValue;
 }
 
+// node_modules/@openai/agents-core/dist/tool.mjs
+function defaultToolErrorFunction(context, error46) {
+  const details = error46 instanceof Error ? error46.toString() : String(error46);
+  return `An error occurred while running the tool. Please try again. Error: ${details}`;
+}
+function tool(options) {
+  const name = options.name ? toFunctionToolName(options.name) : toFunctionToolName(options.execute.name);
+  const toolErrorFunction = typeof options.errorFunction === "undefined" ? defaultToolErrorFunction : options.errorFunction;
+  if (!name) {
+    throw new Error("Tool name cannot be empty. Either name your function or provide a name in the options.");
+  }
+  const strictMode = options.strict ?? true;
+  if (!strictMode && isZodObject(options.parameters)) {
+    throw new UserError("Strict mode is required for Zod parameters");
+  }
+  const { parser, schema: parameters } = getSchemaAndParserFromInputType(options.parameters, name);
+  async function _invoke(runContext, input, details) {
+    const [error46, parsed] = await safeExecute(() => parser(input));
+    if (error46 !== null) {
+      if (logger_default.dontLogToolData) {
+        logger_default.debug(`Invalid JSON input for tool ${name}`);
+      } else {
+        logger_default.debug(`Invalid JSON input for tool ${name}: ${input}`);
+      }
+      throw new ModelBehaviorError("Invalid JSON input for tool");
+    }
+    if (logger_default.dontLogToolData) {
+      logger_default.debug(`Invoking tool ${name}`);
+    } else {
+      logger_default.debug(`Invoking tool ${name} with input ${input}`);
+    }
+    const result = await options.execute(parsed, runContext, details);
+    const stringResult = toSmartString(result);
+    if (logger_default.dontLogToolData) {
+      logger_default.debug(`Tool ${name} completed`);
+    } else {
+      logger_default.debug(`Tool ${name} returned: ${stringResult}`);
+    }
+    return result;
+  }
+  async function invoke(runContext, input, details) {
+    return _invoke(runContext, input, details).catch((error46) => {
+      if (toolErrorFunction) {
+        const currentSpan = getCurrentSpan();
+        currentSpan?.setError({
+          message: "Error running tool (non-fatal)",
+          data: {
+            tool_name: name,
+            error: error46.toString()
+          }
+        });
+        return toolErrorFunction(runContext, error46);
+      }
+      throw error46;
+    });
+  }
+  const needsApproval = typeof options.needsApproval === "function" ? options.needsApproval : async () => typeof options.needsApproval === "boolean" ? options.needsApproval : false;
+  const isEnabled2 = typeof options.isEnabled === "function" ? async (runContext, agent) => {
+    const predicate = options.isEnabled;
+    const result = await predicate({ runContext, agent });
+    return Boolean(result);
+  } : async () => typeof options.isEnabled === "boolean" ? options.isEnabled : true;
+  return {
+    type: "function",
+    name,
+    description: options.description,
+    parameters,
+    strict: strictMode,
+    invoke,
+    needsApproval,
+    isEnabled: isEnabled2
+  };
+}
+
 // node_modules/@openai/agents-core/dist/mcp.mjs
 var import_debug2 = __toESM(require_browser(), 1);
 var MCPTool = external_exports.object({
@@ -17229,6 +19121,166 @@ var MCPTool = external_exports.object({
     additionalProperties: external_exports.boolean()
   })
 });
+var _cachedTools = {};
+var _cachedToolKeysByServer = {};
+var defaultMCPToolCacheKey = ({ server, agent }) => {
+  if (server.toolFilter && typeof server.toolFilter === "function" && agent) {
+    return `${server.name}:${agent.name}`;
+  }
+  return server.name;
+};
+async function getFunctionToolsFromServer({ server, convertSchemasToStrict, runContext, agent, generateMCPToolCacheKey }) {
+  const cacheKey = (generateMCPToolCacheKey || defaultMCPToolCacheKey)({
+    server,
+    agent,
+    runContext
+  });
+  if (server.cacheToolsList && _cachedTools[cacheKey]) {
+    return _cachedTools[cacheKey].map((t) => mcpToFunctionTool(t, server, convertSchemasToStrict));
+  }
+  const listToolsForServer = async (span) => {
+    const fetchedMcpTools = await server.listTools();
+    let mcpTools = fetchedMcpTools;
+    if (runContext && agent) {
+      const context = { runContext, agent, serverName: server.name };
+      const filteredTools = [];
+      for (const tool2 of fetchedMcpTools) {
+        const filter = server.toolFilter;
+        if (filter) {
+          if (typeof filter === "function") {
+            const filtered = await filter(context, tool2);
+            if (!filtered) {
+              logger.debug(`MCP Tool (server: ${server.name}, tool: ${tool2.name}) is blocked by the callable filter.`);
+              continue;
+            }
+          } else {
+            const allowedToolNames = filter.allowedToolNames ?? [];
+            const blockedToolNames = filter.blockedToolNames ?? [];
+            if (allowedToolNames.length > 0 || blockedToolNames.length > 0) {
+              const allowed = allowedToolNames.length > 0 ? allowedToolNames.includes(tool2.name) : true;
+              const blocked = blockedToolNames.length > 0 ? blockedToolNames.includes(tool2.name) : false;
+              if (!allowed || blocked) {
+                if (blocked) {
+                  logger.debug(`MCP Tool (server: ${server.name}, tool: ${tool2.name}) is blocked by the static filter.`);
+                } else if (!allowed) {
+                  logger.debug(`MCP Tool (server: ${server.name}, tool: ${tool2.name}) is not allowed by the static filter.`);
+                }
+                continue;
+              }
+            }
+          }
+        }
+        filteredTools.push(tool2);
+      }
+      mcpTools = filteredTools;
+    }
+    if (span) {
+      span.spanData.result = mcpTools.map((t) => t.name);
+    }
+    const tools = mcpTools.map((t) => mcpToFunctionTool(t, server, convertSchemasToStrict));
+    if (server.cacheToolsList) {
+      _cachedTools[cacheKey] = mcpTools;
+      if (!_cachedToolKeysByServer[server.name]) {
+        _cachedToolKeysByServer[server.name] = /* @__PURE__ */ new Set();
+      }
+      _cachedToolKeysByServer[server.name].add(cacheKey);
+    }
+    return tools;
+  };
+  if (!getCurrentTrace()) {
+    return listToolsForServer();
+  }
+  return withMCPListToolsSpan(listToolsForServer, {
+    data: { server: server.name }
+  });
+}
+async function getAllMcpTools(mcpServersOrOpts, runContext, agent, convertSchemasToStrict = false) {
+  const opts = Array.isArray(mcpServersOrOpts) ? {
+    mcpServers: mcpServersOrOpts,
+    runContext,
+    agent,
+    convertSchemasToStrict
+  } : mcpServersOrOpts;
+  const { mcpServers, convertSchemasToStrict: convertSchemasToStrictFromOpts = false, runContext: runContextFromOpts, agent: agentFromOpts, generateMCPToolCacheKey } = opts;
+  const allTools = [];
+  const toolNames = /* @__PURE__ */ new Set();
+  for (const server of mcpServers) {
+    const serverTools = await getFunctionToolsFromServer({
+      server,
+      convertSchemasToStrict: convertSchemasToStrictFromOpts,
+      runContext: runContextFromOpts,
+      agent: agentFromOpts,
+      generateMCPToolCacheKey
+    });
+    const serverToolNames = new Set(serverTools.map((t) => t.name));
+    const intersection2 = [...serverToolNames].filter((n) => toolNames.has(n));
+    if (intersection2.length > 0) {
+      throw new UserError(`Duplicate tool names found across MCP servers: ${intersection2.join(", ")}`);
+    }
+    for (const t of serverTools) {
+      toolNames.add(t.name);
+      allTools.push(t);
+    }
+  }
+  return allTools;
+}
+function mcpToFunctionTool(mcpTool, server, convertSchemasToStrict) {
+  async function invoke(input, _context2) {
+    let args = {};
+    if (typeof input === "string" && input) {
+      args = JSON.parse(input);
+    } else if (typeof input === "object" && input != null) {
+      args = input;
+    }
+    const currentSpan = getCurrentSpan();
+    if (currentSpan) {
+      currentSpan.spanData["mcp_data"] = { server: server.name };
+    }
+    const content = await server.callTool(mcpTool.name, args);
+    return content.length === 1 ? content[0] : content;
+  }
+  const schema = {
+    ...mcpTool.inputSchema,
+    type: mcpTool.inputSchema?.type ?? "object",
+    properties: mcpTool.inputSchema?.properties ?? {},
+    required: mcpTool.inputSchema?.required ?? [],
+    additionalProperties: mcpTool.inputSchema?.additionalProperties ?? false
+  };
+  if (convertSchemasToStrict || schema.additionalProperties === true) {
+    try {
+      const strictSchema = ensureStrictJsonSchema2(schema);
+      return tool({
+        name: mcpTool.name,
+        description: mcpTool.description || "",
+        parameters: strictSchema,
+        strict: true,
+        execute: invoke
+      });
+    } catch (e) {
+      logger.warn(`Error converting MCP schema to strict mode: ${e}`);
+    }
+  }
+  const nonStrictSchema = {
+    ...schema,
+    additionalProperties: true
+  };
+  return tool({
+    name: mcpTool.name,
+    description: mcpTool.description || "",
+    parameters: nonStrictSchema,
+    strict: false,
+    execute: invoke
+  });
+}
+function ensureStrictJsonSchema2(schema) {
+  const out = {
+    ...schema,
+    additionalProperties: false
+  };
+  if (!out.required)
+    out.required = [];
+  return out;
+}
 
 // node_modules/@openai/agents-core/dist/shims/shims-browser.mjs
 function loadEnv() {
@@ -17297,6 +19349,14 @@ var randomUUID = () => {
     return v.toString(16);
   });
 };
+var Readable = class Readable2 {
+  constructor() {
+  }
+  pipeTo(_destination, _options) {
+  }
+  pipeThrough(_transform2, _options) {
+  }
+};
 var ReadableStream = globalThis.ReadableStream;
 var ReadableStreamController = globalThis.ReadableStreamDefaultController;
 var TransformStream = globalThis.TransformStream;
@@ -17356,16 +19416,510 @@ var EventEmitterDelegate = class {
     return this.eventEmitter;
   }
 };
+var AgentHooks = class extends EventEmitterDelegate {
+  constructor() {
+    super(...arguments);
+    __publicField(this, "eventEmitter", new BrowserEventEmitter());
+  }
+};
+var RunHooks = class extends EventEmitterDelegate {
+  constructor() {
+    super(...arguments);
+    __publicField(this, "eventEmitter", new BrowserEventEmitter());
+  }
+};
+
+// node_modules/@openai/agents-core/dist/defaultModel.mjs
+var OPENAI_DEFAULT_MODEL_ENV_VARIABLE_NAME = "OPENAI_DEFAULT_MODEL";
+function gpt5ReasoningSettingsRequired(modelName) {
+  if (modelName.startsWith("gpt-5-chat")) {
+    return false;
+  }
+  return modelName.startsWith("gpt-5");
+}
+function isGpt5Default() {
+  return gpt5ReasoningSettingsRequired(getDefaultModel());
+}
+function getDefaultModel() {
+  const env = loadEnv2();
+  return env[OPENAI_DEFAULT_MODEL_ENV_VARIABLE_NAME]?.toLowerCase() ?? "gpt-4.1";
+}
+function getDefaultModelSettings(model) {
+  const _model2 = model ?? getDefaultModel();
+  if (gpt5ReasoningSettingsRequired(_model2)) {
+    return {
+      // We chose "low" instead of "minimal" because some of the built-in tools
+      // (e.g., file search, image generation, etc.) do not support "minimal"
+      // If you want to use "minimal" reasoning effort, you can pass your own model settings
+      reasoning: { effort: "low" },
+      text: { verbosity: "low" }
+    };
+  }
+  return {};
+}
 
 // node_modules/@openai/agents-core/dist/handoff.mjs
 function getTransferMessage(agent) {
   return JSON.stringify({ assistant: agent.name });
 }
+function defaultHandoffToolName(agent) {
+  return `transfer_to_${toFunctionToolName(agent.name)}`;
+}
+function defaultHandoffToolDescription(agent) {
+  return `Handoff to the ${agent.name} agent to handle the request. ${agent.handoffDescription ?? ""}`;
+}
+var Handoff = class {
+  constructor(agent, onInvokeHandoff) {
+    /**
+     * The name of the tool that represents the handoff.
+     */
+    __publicField(this, "toolName");
+    /**
+     * The description of the tool that represents the handoff.
+     */
+    __publicField(this, "toolDescription");
+    /**
+     * The JSON schema for the handoff input. Can be empty if the handoff does not take an input
+     */
+    __publicField(this, "inputJsonSchema", {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false
+    });
+    /**
+     * Whether the input JSON schema is in strict mode. We **strongly** recommend setting this to
+     * true, as it increases the likelihood of correct JSON input.
+     */
+    __publicField(this, "strictJsonSchema", true);
+    /**
+     * The function that invokes the handoff. The parameters passed are:
+     * 1. The handoff run context
+     * 2. The arguments from the LLM, as a JSON string. Empty string if inputJsonSchema is empty.
+     *
+     * Must return an agent
+     */
+    __publicField(this, "onInvokeHandoff");
+    /**
+     * The name of the agent that is being handed off to.
+     */
+    __publicField(this, "agentName");
+    /**
+     * A function that filters the inputs that are passed to the next agent. By default, the new agent
+     * sees the entire conversation history. In some cases, you may want to filter inputs e.g. to
+     * remove older inputs, or remove tools from existing inputs.
+     *
+     * The function will receive the entire conversation hisstory so far, including the input item
+     * that triggered the handoff and a tool call output item representing the handoff tool's output.
+     *
+     * You are free to modify the input history or new items as you see fit. The next agent that runs
+     * will receive `handoffInputData.allItems
+     */
+    __publicField(this, "inputFilter");
+    /**
+     * The agent that is being handed off to.
+     */
+    __publicField(this, "agent");
+    __publicField(this, "isEnabled", async () => true);
+    this.agentName = agent.name;
+    this.onInvokeHandoff = onInvokeHandoff;
+    this.toolName = defaultHandoffToolName(agent);
+    this.toolDescription = defaultHandoffToolDescription(agent);
+    this.agent = agent;
+  }
+  /**
+   * Returns a function tool definition that can be used to invoke the handoff.
+   */
+  getHandoffAsFunctionTool() {
+    return {
+      type: "function",
+      name: this.toolName,
+      description: this.toolDescription,
+      parameters: this.inputJsonSchema,
+      strict: this.strictJsonSchema
+    };
+  }
+};
+function handoff(agent, config2 = {}) {
+  let parser = void 0;
+  const hasOnHandoff = !!config2.onHandoff;
+  const hasInputType = !!config2.inputType;
+  const hasBothOrNeitherHandoffAndInputType = hasOnHandoff === hasInputType;
+  if (!hasBothOrNeitherHandoffAndInputType) {
+    throw new UserError("You must provide either both `onHandoff` and `inputType` or neither.");
+  }
+  async function onInvokeHandoff(context, inputJsonString) {
+    if (parser) {
+      if (!inputJsonString) {
+        addErrorToCurrentSpan({
+          message: `Handoff function expected non empty input but got: ${inputJsonString}`,
+          data: {
+            details: `input is empty`
+          }
+        });
+        throw new ModelBehaviorError("Handoff function expected non empty input");
+      }
+      try {
+        const parsed = await parser(inputJsonString);
+        if (config2.onHandoff) {
+          await config2.onHandoff(context, parsed);
+        }
+      } catch (error46) {
+        addErrorToCurrentSpan({
+          message: `Invalid JSON provided`,
+          data: {}
+        });
+        if (!logger_default.dontLogToolData) {
+          logger_default.error(`Invalid JSON when parsing: ${inputJsonString}. Error: ${error46}`);
+        }
+        throw new ModelBehaviorError("Invalid JSON provided");
+      }
+    } else {
+      await config2.onHandoff?.(context);
+    }
+    return agent;
+  }
+  const handoff2 = new Handoff(agent, onInvokeHandoff);
+  if (typeof config2.isEnabled === "function") {
+    const predicate = config2.isEnabled;
+    handoff2.isEnabled = async ({ runContext, agent: agent2 }) => {
+      const result = await predicate({ runContext, agent: agent2 });
+      return Boolean(result);
+    };
+  } else if (typeof config2.isEnabled === "boolean") {
+    handoff2.isEnabled = async () => config2.isEnabled;
+  }
+  if (config2.inputType) {
+    const result = getSchemaAndParserFromInputType(config2.inputType, handoff2.toolName);
+    handoff2.inputJsonSchema = result.schema;
+    handoff2.strictJsonSchema = true;
+    parser = result.parser;
+  }
+  if (config2.toolNameOverride) {
+    handoff2.toolName = config2.toolNameOverride;
+  }
+  if (config2.toolDescriptionOverride) {
+    handoff2.toolDescription = config2.toolDescriptionOverride;
+  }
+  if (config2.inputFilter) {
+    handoff2.inputFilter = config2.inputFilter;
+  }
+  return handoff2;
+}
+function getHandoff(agent) {
+  if (agent instanceof Handoff) {
+    return agent;
+  }
+  return handoff(agent);
+}
+
+// node_modules/@openai/agents-core/dist/utils/messages.mjs
+function getLastTextFromOutputMessage(outputMessage) {
+  if (outputMessage.type !== "message") {
+    return void 0;
+  }
+  if (outputMessage.role !== "assistant") {
+    return void 0;
+  }
+  const lastItem = outputMessage.content[outputMessage.content.length - 1];
+  if (lastItem.type !== "output_text") {
+    return void 0;
+  }
+  return lastItem.text;
+}
+function getOutputText(output) {
+  if (output.output.length === 0) {
+    return "";
+  }
+  return getLastTextFromOutputMessage(output.output[output.output.length - 1]) || "";
+}
 
 // node_modules/@openai/agents-core/dist/agent.mjs
+var agentToolRunResults = /* @__PURE__ */ new WeakMap();
+function saveAgentToolRunResult(toolCall, runResult) {
+  if (toolCall) {
+    agentToolRunResults.set(toolCall, runResult);
+  }
+}
+function consumeAgentToolRunResult(toolCall) {
+  const runResult = agentToolRunResults.get(toolCall);
+  if (runResult) {
+    agentToolRunResults.delete(toolCall);
+  }
+  return runResult;
+}
 var AgentAsToolNeedApprovalSchame = external_exports.object({ input: external_exports.string() });
+var _Agent = class _Agent extends AgentHooks {
+  constructor(config2) {
+    super();
+    __publicField(this, "name");
+    __publicField(this, "instructions");
+    __publicField(this, "prompt");
+    __publicField(this, "handoffDescription");
+    __publicField(this, "handoffs");
+    __publicField(this, "model");
+    __publicField(this, "modelSettings");
+    __publicField(this, "tools");
+    __publicField(this, "mcpServers");
+    __publicField(this, "inputGuardrails");
+    __publicField(this, "outputGuardrails");
+    __publicField(this, "outputType", "text");
+    __publicField(this, "toolUseBehavior");
+    __publicField(this, "resetToolChoice");
+    __publicField(this, "_toolsExplicitlyConfigured");
+    if (typeof config2.name !== "string" || config2.name.trim() === "") {
+      throw new UserError("Agent must have a name.");
+    }
+    this.name = config2.name;
+    this.instructions = config2.instructions ?? _Agent.DEFAULT_MODEL_PLACEHOLDER;
+    this.prompt = config2.prompt;
+    this.handoffDescription = config2.handoffDescription ?? "";
+    this.handoffs = config2.handoffs ?? [];
+    this.model = config2.model ?? "";
+    this.modelSettings = config2.modelSettings ?? getDefaultModelSettings();
+    this.tools = config2.tools ?? [];
+    this._toolsExplicitlyConfigured = config2.tools !== void 0;
+    this.mcpServers = config2.mcpServers ?? [];
+    this.inputGuardrails = config2.inputGuardrails ?? [];
+    this.outputGuardrails = config2.outputGuardrails ?? [];
+    if (config2.outputType) {
+      this.outputType = config2.outputType;
+    }
+    this.toolUseBehavior = config2.toolUseBehavior ?? "run_llm_again";
+    this.resetToolChoice = config2.resetToolChoice ?? true;
+    if (
+      // The user sets a non-default model
+      config2.model !== void 0 && // The default model is gpt-5
+      isGpt5Default() && // However, the specified model is not a gpt-5 model
+      (typeof config2.model !== "string" || !gpt5ReasoningSettingsRequired(config2.model)) && // The model settings are not customized for the specified model
+      config2.modelSettings === void 0
+    ) {
+      this.modelSettings = {};
+    }
+    if (config2.handoffOutputTypeWarningEnabled === void 0 || config2.handoffOutputTypeWarningEnabled) {
+      if (this.handoffs && this.outputType) {
+        const outputTypes = /* @__PURE__ */ new Set([JSON.stringify(this.outputType)]);
+        for (const h of this.handoffs) {
+          if ("outputType" in h && h.outputType) {
+            outputTypes.add(JSON.stringify(h.outputType));
+          } else if ("agent" in h && h.agent.outputType) {
+            outputTypes.add(JSON.stringify(h.agent.outputType));
+          }
+        }
+        if (outputTypes.size > 1) {
+          logger_default.warn(`[Agent] Warning: Handoff agents have different output types: ${Array.from(outputTypes).join(", ")}. You can make it type-safe by using Agent.create({ ... }) method instead.`);
+        }
+      }
+    }
+  }
+  /**
+   * Create an Agent with handoffs and automatically infer the union type for TOutput from the handoff agents' output types.
+   */
+  static create(config2) {
+    return new _Agent({
+      ...config2,
+      handoffs: config2.handoffs,
+      outputType: config2.outputType,
+      handoffOutputTypeWarningEnabled: false
+    });
+  }
+  /**
+   * Output schema name.
+   */
+  get outputSchemaName() {
+    if (this.outputType === "text") {
+      return "text";
+    } else if (isZodObject(this.outputType)) {
+      return "ZodOutput";
+    } else if (typeof this.outputType === "object") {
+      return this.outputType.name;
+    }
+    throw new Error(`Unknown output type: ${this.outputType}`);
+  }
+  /**
+   * Makes a copy of the agent, with the given arguments changed. For example, you could do:
+   *
+   * ```
+   * const newAgent = agent.clone({ instructions: 'New instructions' })
+   * ```
+   *
+   * @param config - A partial configuration to change.
+   * @returns A new agent with the given changes.
+   */
+  clone(config2) {
+    return new _Agent({
+      ...this,
+      ...config2
+    });
+  }
+  /**
+   * Transform this agent into a tool, callable by other agents.
+   *
+   * This is different from handoffs in two ways:
+   * 1. In handoffs, the new agent receives the conversation history. In this tool, the new agent
+   *    receives generated input.
+   * 2. In handoffs, the new agent takes over the conversation. In this tool, the new agent is
+   *    called as a tool, and the conversation is continued by the original agent.
+   *
+   * @param options - Options for the tool.
+   * @returns A tool that runs the agent and returns the output text.
+   */
+  asTool(options) {
+    const { toolName, toolDescription, customOutputExtractor, needsApproval, runConfig, runOptions, isEnabled: isEnabled2 } = options;
+    return tool({
+      name: toolName ?? toFunctionToolName(this.name),
+      description: toolDescription ?? "",
+      parameters: AgentAsToolNeedApprovalSchame,
+      strict: true,
+      needsApproval,
+      isEnabled: isEnabled2,
+      execute: async (data, context, details) => {
+        if (!isAgentToolInput(data)) {
+          throw new ModelBehaviorError("Agent tool called with invalid input");
+        }
+        const runner = new Runner(runConfig ?? {});
+        const result = await runner.run(this, data.input, {
+          context,
+          ...runOptions ?? {}
+        });
+        const completedResult = result;
+        const usesStopAtToolNames = typeof this.toolUseBehavior === "object" && this.toolUseBehavior !== null && "stopAtToolNames" in this.toolUseBehavior;
+        if (typeof customOutputExtractor !== "function" && usesStopAtToolNames) {
+          logger_default.debug(`You're passing the agent (name: ${this.name}) with toolUseBehavior.stopAtToolNames configured as a tool to a different agent; this may not work as you expect. You may want to have a wrapper function tool to consistently return the final output.`);
+        }
+        const outputText = typeof customOutputExtractor === "function" ? await customOutputExtractor(completedResult) : getOutputText(completedResult.rawResponses[completedResult.rawResponses.length - 1]);
+        if (details?.toolCall) {
+          saveAgentToolRunResult(details.toolCall, completedResult);
+        }
+        return outputText;
+      }
+    });
+  }
+  /**
+   * Returns the system prompt for the agent.
+   *
+   * If the agent has a function as its instructions, this function will be called with the
+   * runContext and the agent instance.
+   */
+  async getSystemPrompt(runContext) {
+    if (typeof this.instructions === "function") {
+      return await this.instructions(runContext, this);
+    }
+    return this.instructions;
+  }
+  /**
+   * Returns the prompt template for the agent, if defined.
+   *
+   * If the agent has a function as its prompt, this function will be called with the
+   * runContext and the agent instance.
+   */
+  async getPrompt(runContext) {
+    if (typeof this.prompt === "function") {
+      return await this.prompt(runContext, this);
+    }
+    return this.prompt;
+  }
+  /**
+   * Fetches the available tools from the MCP servers.
+   * @returns the MCP powered tools
+   */
+  async getMcpTools(runContext) {
+    if (this.mcpServers.length > 0) {
+      return getAllMcpTools({
+        mcpServers: this.mcpServers,
+        runContext,
+        agent: this,
+        convertSchemasToStrict: false
+      });
+    }
+    return [];
+  }
+  /**
+   * ALl agent tools, including the MCPl and function tools.
+   *
+   * @returns all configured tools
+   */
+  async getAllTools(runContext) {
+    const mcpTools = await this.getMcpTools(runContext);
+    const enabledTools = [];
+    for (const candidate of this.tools) {
+      if (candidate.type === "function") {
+        const maybeIsEnabled = candidate.isEnabled;
+        const enabled = typeof maybeIsEnabled === "function" ? await maybeIsEnabled(runContext, this) : typeof maybeIsEnabled === "boolean" ? maybeIsEnabled : true;
+        if (!enabled) {
+          continue;
+        }
+      }
+      enabledTools.push(candidate);
+    }
+    return [...mcpTools, ...enabledTools];
+  }
+  hasExplicitToolConfig() {
+    return this._toolsExplicitlyConfigured;
+  }
+  /**
+   * Returns the handoffs that should be exposed to the model for the current run.
+   *
+   * Handoffs that provide an `isEnabled` function returning `false` are omitted.
+   */
+  async getEnabledHandoffs(runContext) {
+    const handoffs = this.handoffs?.map((h) => getHandoff(h)) ?? [];
+    const enabled = [];
+    for (const handoff2 of handoffs) {
+      if (await handoff2.isEnabled({ runContext, agent: this })) {
+        enabled.push(handoff2);
+      }
+    }
+    return enabled;
+  }
+  /**
+   * Processes the final output of the agent.
+   *
+   * @param output - The output of the agent.
+   * @returns The parsed out.
+   */
+  processFinalOutput(output) {
+    if (this.outputType === "text") {
+      return output;
+    }
+    if (typeof this.outputType === "object") {
+      const parsed = JSON.parse(output);
+      if (isZodObject(this.outputType)) {
+        return this.outputType.parse(parsed);
+      }
+      return parsed;
+    }
+    throw new Error(`Unknown output type: ${this.outputType}`);
+  }
+  /**
+   * Returns a JSON representation of the agent, which is serializable.
+   *
+   * @returns A JSON object containing the agent's name.
+   */
+  toJSON() {
+    return {
+      name: this.name
+    };
+  }
+};
+__publicField(_Agent, "DEFAULT_MODEL_PLACEHOLDER", "");
+var Agent = _Agent;
 
 // node_modules/@openai/agents-core/dist/guardrail.mjs
+function defineInputGuardrail({ name, execute, runInParallel = true }) {
+  return {
+    type: "input",
+    name,
+    runInParallel,
+    guardrailFunction: execute,
+    async run(args) {
+      return {
+        guardrail: { type: "input", name },
+        output: await execute(args)
+      };
+    }
+  };
+}
 function defineOutputGuardrail({ name, execute }) {
   return {
     type: "output",
@@ -17380,6 +19934,15 @@ function defineOutputGuardrail({ name, execute }) {
       };
     }
   };
+}
+
+// node_modules/@openai/agents-core/dist/providers.mjs
+var DEFAULT_PROVIDER;
+function getDefaultModelProvider() {
+  if (typeof DEFAULT_PROVIDER === "undefined") {
+    throw new Error("No default model provider set. Make sure to set a provider using setDefaultModelProvider before calling getDefaultModelProvider or pass an explicit provider.");
+  }
+  return DEFAULT_PROVIDER;
 }
 
 // node_modules/@openai/agents-core/dist/types/protocol.mjs
@@ -18149,6 +20712,52 @@ var RunContext = class {
 };
 _approvals = new WeakMap();
 
+// node_modules/@openai/agents-core/dist/utils/serialize.mjs
+function serializeTool(tool2) {
+  if (tool2.type === "function") {
+    return {
+      type: "function",
+      name: tool2.name,
+      description: tool2.description,
+      parameters: tool2.parameters,
+      strict: tool2.strict
+    };
+  }
+  if (tool2.type === "computer") {
+    return {
+      type: "computer",
+      name: tool2.name,
+      environment: tool2.computer.environment,
+      dimensions: tool2.computer.dimensions
+    };
+  }
+  if (tool2.type === "shell") {
+    return {
+      type: "shell",
+      name: tool2.name
+    };
+  }
+  if (tool2.type === "apply_patch") {
+    return {
+      type: "apply_patch",
+      name: tool2.name
+    };
+  }
+  return {
+    type: "hosted_tool",
+    name: tool2.name,
+    providerData: tool2.providerData
+  };
+}
+function serializeHandoff(h) {
+  return {
+    toolName: h.toolName,
+    toolDescription: h.toolDescription,
+    inputJsonSchema: h.inputJsonSchema,
+    strictJsonSchema: h.strictJsonSchema
+  };
+}
+
 // node_modules/@openai/agents-core/dist/items.mjs
 var RunItemBase = class {
   constructor() {
@@ -18159,6 +20768,117 @@ var RunItemBase = class {
     return {
       type: this.type,
       rawItem: this.rawItem
+    };
+  }
+};
+var RunMessageOutputItem = class extends RunItemBase {
+  constructor(rawItem, agent) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "agent");
+    __publicField(this, "type", "message_output_item");
+    this.rawItem = rawItem;
+    this.agent = agent;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      agent: this.agent.toJSON()
+    };
+  }
+  get content() {
+    let content = "";
+    for (const part of this.rawItem.content) {
+      if (part.type === "output_text") {
+        content += part.text;
+      }
+    }
+    return content;
+  }
+};
+var RunToolCallItem = class extends RunItemBase {
+  constructor(rawItem, agent) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "agent");
+    __publicField(this, "type", "tool_call_item");
+    this.rawItem = rawItem;
+    this.agent = agent;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      agent: this.agent.toJSON()
+    };
+  }
+};
+var RunToolCallOutputItem = class extends RunItemBase {
+  constructor(rawItem, agent, output) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "agent");
+    __publicField(this, "output");
+    __publicField(this, "type", "tool_call_output_item");
+    this.rawItem = rawItem;
+    this.agent = agent;
+    this.output = output;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      agent: this.agent.toJSON(),
+      output: toSmartString(this.output)
+    };
+  }
+};
+var RunReasoningItem = class extends RunItemBase {
+  constructor(rawItem, agent) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "agent");
+    __publicField(this, "type", "reasoning_item");
+    this.rawItem = rawItem;
+    this.agent = agent;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      agent: this.agent.toJSON()
+    };
+  }
+};
+var RunHandoffCallItem = class extends RunItemBase {
+  constructor(rawItem, agent) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "agent");
+    __publicField(this, "type", "handoff_call_item");
+    this.rawItem = rawItem;
+    this.agent = agent;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      agent: this.agent.toJSON()
+    };
+  }
+};
+var RunHandoffOutputItem = class extends RunItemBase {
+  constructor(rawItem, sourceAgent, targetAgent) {
+    super();
+    __publicField(this, "rawItem");
+    __publicField(this, "sourceAgent");
+    __publicField(this, "targetAgent");
+    __publicField(this, "type", "handoff_output_item");
+    this.rawItem = rawItem;
+    this.sourceAgent = sourceAgent;
+    this.targetAgent = targetAgent;
+  }
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      sourceAgent: this.sourceAgent.toJSON(),
+      targetAgent: this.targetAgent.toJSON()
     };
   }
 };
@@ -18332,7 +21052,293 @@ function createMCPListToolsSpan(options, parent) {
 }
 var withMCPListToolsSpan = _withSpanFactory(createMCPListToolsSpan);
 
+// node_modules/@openai/agents-core/dist/utils/base64.mjs
+function encodeUint8ArrayToBase64(data) {
+  if (data.length === 0) {
+    return "";
+  }
+  const globalBuffer = typeof globalThis !== "undefined" && globalThis.Buffer ? globalThis.Buffer : void 0;
+  if (globalBuffer) {
+    return globalBuffer.from(data).toString("base64");
+  }
+  let binary = "";
+  for (let i2 = 0; i2 < data.length; i2 += 1) {
+    binary += String.fromCharCode(data[i2]);
+  }
+  if (typeof globalThis.btoa === "function") {
+    return globalThis.btoa(binary);
+  }
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  let result = "";
+  let i = 0;
+  while (i < binary.length) {
+    const c1 = binary.charCodeAt(i++);
+    const c2 = binary.charCodeAt(i++);
+    const c3 = binary.charCodeAt(i++);
+    const enc1 = c1 >> 2;
+    const enc2 = (c1 & 3) << 4 | c2 >> 4;
+    const enc3 = isNaN(c2) ? 64 : (c2 & 15) << 2 | c3 >> 6;
+    const enc4 = isNaN(c3) ? 64 : c3 & 63;
+    result += chars.charAt(enc1) + chars.charAt(enc2) + chars.charAt(enc3) + chars.charAt(enc4);
+  }
+  return result;
+}
+
+// node_modules/@openai/agents-core/dist/events.mjs
+var RunRawModelStreamEvent = class {
+  /**
+   * @param data The raw responses stream events from the LLM.
+   */
+  constructor(data) {
+    __publicField(this, "data");
+    /**
+     * The type of the event.
+     */
+    __publicField(this, "type", "raw_model_stream_event");
+    this.data = data;
+  }
+};
+var RunItemStreamEvent = class {
+  /**
+   * @param name The name of the event.
+   * @param item The item that was created.
+   */
+  constructor(name, item) {
+    __publicField(this, "name");
+    __publicField(this, "item");
+    __publicField(this, "type", "run_item_stream_event");
+    this.name = name;
+    this.item = item;
+  }
+};
+var RunAgentUpdatedStreamEvent = class {
+  /**
+   * @param agent The new agent
+   */
+  constructor(agent) {
+    __publicField(this, "agent");
+    __publicField(this, "type", "agent_updated_stream_event");
+    this.agent = agent;
+  }
+};
+
 // node_modules/@openai/agents-core/dist/runImplementation.mjs
+function isApprovalItemLike(value) {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  if (!("rawItem" in value)) {
+    return false;
+  }
+  const rawItem = value.rawItem;
+  if (!rawItem || typeof rawItem !== "object") {
+    return false;
+  }
+  const itemType = rawItem.type;
+  return itemType === "function_call" || itemType === "hosted_tool_call";
+}
+function getApprovalIdentity(approval) {
+  const rawItem = approval.rawItem;
+  if (!rawItem) {
+    return void 0;
+  }
+  if (rawItem.type === "function_call" && rawItem.callId) {
+    return `function_call:${rawItem.callId}`;
+  }
+  if ("callId" in rawItem && rawItem.callId) {
+    return `${rawItem.type}:${rawItem.callId}`;
+  }
+  const id = "id" in rawItem ? rawItem.id : void 0;
+  if (id) {
+    return `${rawItem.type}:${id}`;
+  }
+  const providerData = typeof rawItem.providerData === "object" && rawItem.providerData ? rawItem.providerData : void 0;
+  if (providerData?.id) {
+    return `${rawItem.type}:provider:${providerData.id}`;
+  }
+  const agentName = "agent" in approval && approval.agent ? approval.agent.name : "";
+  try {
+    return `${agentName}:${rawItem.type}:${JSON.stringify(rawItem)}`;
+  } catch {
+    return `${agentName}:${rawItem.type}`;
+  }
+}
+function formatFinalOutputTypeError(error46) {
+  try {
+    if (error46 instanceof external_exports.ZodError) {
+      const issue2 = error46.issues[0];
+      if (issue2) {
+        const issuePathParts = Array.isArray(issue2.path) ? issue2.path : [];
+        const issuePath = issuePathParts.length > 0 ? issuePathParts.map((part) => String(part)).join(".") : "(root)";
+        const message = truncateForDeveloper(issue2.message ?? "");
+        return `Invalid output type: final assistant output failed schema validation at "${issuePath}" (${message}).`;
+      }
+      return "Invalid output type: final assistant output failed schema validation.";
+    }
+    if (error46 instanceof Error && error46.message) {
+      return `Invalid output type: ${truncateForDeveloper(error46.message)}`;
+    }
+  } catch {
+  }
+  return "Invalid output type: final assistant output did not match the expected schema.";
+}
+function truncateForDeveloper(message, maxLength = 160) {
+  const trimmed = message.trim();
+  if (!trimmed) {
+    return "Schema validation failed.";
+  }
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, maxLength - 3)}...`;
+}
+function processModelResponse(modelResponse, agent, tools, handoffs) {
+  const items = [];
+  const runHandoffs = [];
+  const runFunctions = [];
+  const runComputerActions = [];
+  const runShellActions = [];
+  const runApplyPatchActions = [];
+  const runMCPApprovalRequests = [];
+  const toolsUsed = [];
+  const handoffMap = new Map(handoffs.map((h) => [h.toolName, h]));
+  const functionMap = new Map(tools.filter((t) => t.type === "function").map((t) => [t.name, t]));
+  const computerTool2 = tools.find((t) => t.type === "computer");
+  const shellTool2 = tools.find((t) => t.type === "shell");
+  const applyPatchTool2 = tools.find((t) => t.type === "apply_patch");
+  const mcpToolMap = new Map(tools.filter((t) => t.type === "hosted_tool" && t.providerData?.type === "mcp").map((t) => t).map((t) => [t.providerData.server_label, t]));
+  for (const output of modelResponse.output) {
+    if (output.type === "message") {
+      if (output.role === "assistant") {
+        items.push(new RunMessageOutputItem(output, agent));
+      }
+    } else if (output.type === "hosted_tool_call") {
+      items.push(new RunToolCallItem(output, agent));
+      const toolName = output.name;
+      toolsUsed.push(toolName);
+      if (output.providerData?.type === "mcp_approval_request" || output.name === "mcp_approval_request") {
+        const providerData = output.providerData;
+        const mcpServerLabel = providerData.server_label;
+        const mcpServerTool = mcpToolMap.get(mcpServerLabel);
+        if (typeof mcpServerTool === "undefined") {
+          const message = `MCP server (${mcpServerLabel}) not found in Agent (${agent.name})`;
+          addErrorToCurrentSpan({
+            message,
+            data: { mcp_server_label: mcpServerLabel }
+          });
+          throw new ModelBehaviorError(message);
+        }
+        const approvalItem = new RunToolApprovalItem({
+          type: "hosted_tool_call",
+          // We must use this name to align with the name sent from the servers
+          name: providerData.name,
+          id: providerData.id,
+          status: "in_progress",
+          providerData
+        }, agent);
+        runMCPApprovalRequests.push({
+          requestItem: approvalItem,
+          mcpTool: mcpServerTool
+        });
+        if (!mcpServerTool.providerData.on_approval) {
+          items.push(approvalItem);
+        }
+      }
+    } else if (output.type === "reasoning") {
+      items.push(new RunReasoningItem(output, agent));
+    } else if (output.type === "computer_call") {
+      items.push(new RunToolCallItem(output, agent));
+      toolsUsed.push("computer_use");
+      if (!computerTool2) {
+        addErrorToCurrentSpan({
+          message: "Model produced computer action without a computer tool.",
+          data: {
+            agent_name: agent.name
+          }
+        });
+        throw new ModelBehaviorError("Model produced computer action without a computer tool.");
+      }
+      runComputerActions.push({
+        toolCall: output,
+        computer: computerTool2
+      });
+    } else if (output.type === "shell_call") {
+      items.push(new RunToolCallItem(output, agent));
+      toolsUsed.push("shell");
+      if (!shellTool2) {
+        addErrorToCurrentSpan({
+          message: "Model produced shell action without a shell tool.",
+          data: {
+            agent_name: agent.name
+          }
+        });
+        throw new ModelBehaviorError("Model produced shell action without a shell tool.");
+      }
+      runShellActions.push({
+        toolCall: output,
+        shell: shellTool2
+      });
+    } else if (output.type === "apply_patch_call") {
+      items.push(new RunToolCallItem(output, agent));
+      toolsUsed.push("apply_patch");
+      if (!applyPatchTool2) {
+        addErrorToCurrentSpan({
+          message: "Model produced apply_patch action without an apply_patch tool.",
+          data: {
+            agent_name: agent.name
+          }
+        });
+        throw new ModelBehaviorError("Model produced apply_patch action without an apply_patch tool.");
+      }
+      runApplyPatchActions.push({
+        toolCall: output,
+        applyPatch: applyPatchTool2
+      });
+    }
+    if (output.type !== "function_call") {
+      continue;
+    }
+    toolsUsed.push(output.name);
+    const handoff2 = handoffMap.get(output.name);
+    if (handoff2) {
+      items.push(new RunHandoffCallItem(output, agent));
+      runHandoffs.push({
+        toolCall: output,
+        handoff: handoff2
+      });
+    } else {
+      const functionTool = functionMap.get(output.name);
+      if (!functionTool) {
+        addErrorToCurrentSpan({
+          message: `Tool ${output.name} not found in agent ${agent.name}.`,
+          data: {
+            tool_name: output.name,
+            agent_name: agent.name
+          }
+        });
+        throw new ModelBehaviorError(`Tool ${output.name} not found in agent ${agent.name}.`);
+      }
+      items.push(new RunToolCallItem(output, agent));
+      runFunctions.push({
+        toolCall: output,
+        tool: functionTool
+      });
+    }
+  }
+  return {
+    newItems: items,
+    handoffs: runHandoffs,
+    functions: runFunctions,
+    computerActions: runComputerActions,
+    shellActions: runShellActions,
+    applyPatchActions: runApplyPatchActions,
+    mcpApprovalRequests: runMCPApprovalRequests,
+    toolsUsed,
+    hasToolsOrApprovalsToRun() {
+      return runHandoffs.length > 0 || runFunctions.length > 0 || runMCPApprovalRequests.length > 0 || runComputerActions.length > 0 || runShellActions.length > 0 || runApplyPatchActions.length > 0;
+    }
+  };
+}
 var nextStepSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({
     type: external_exports.literal("next_step_handoff"),
@@ -18350,6 +21356,1439 @@ var nextStepSchema = external_exports.discriminatedUnion("type", [
     data: external_exports.record(external_exports.string(), external_exports.any())
   })
 ]);
+var SingleStepResult = class {
+  constructor(originalInput, modelResponse, preStepItems, newStepItems, nextStep) {
+    __publicField(this, "originalInput");
+    __publicField(this, "modelResponse");
+    __publicField(this, "preStepItems");
+    __publicField(this, "newStepItems");
+    __publicField(this, "nextStep");
+    this.originalInput = originalInput;
+    this.modelResponse = modelResponse;
+    this.preStepItems = preStepItems;
+    this.newStepItems = newStepItems;
+    this.nextStep = nextStep;
+  }
+  /**
+   * The items generated during the agent run (i.e. everything generated after originalInput)
+   */
+  get generatedItems() {
+    return this.preStepItems.concat(this.newStepItems);
+  }
+};
+function maybeResetToolChoice(agent, toolUseTracker, modelSettings) {
+  if (agent.resetToolChoice && toolUseTracker.hasUsedTools(agent)) {
+    return { ...modelSettings, toolChoice: void 0 };
+  }
+  return modelSettings;
+}
+async function resolveInterruptedTurn(agent, originalInput, originalPreStepItems, newResponse, processedResponse, runner, state) {
+  const functionCallIds = originalPreStepItems.filter((item) => item instanceof RunToolApprovalItem && "callId" in item.rawItem && item.rawItem.type === "function_call").map((item) => item.rawItem.callId);
+  const pendingApprovalItems = state.getInterruptions().filter(isApprovalItemLike);
+  if (pendingApprovalItems.length > 0) {
+    const pendingApprovalIdentities = /* @__PURE__ */ new Set();
+    for (const approval of pendingApprovalItems) {
+      const identity = getApprovalIdentity(approval);
+      if (identity) {
+        pendingApprovalIdentities.add(identity);
+      }
+    }
+    if (pendingApprovalIdentities.size > 0) {
+      let rewindCount = 0;
+      for (let index = originalPreStepItems.length - 1; index >= 0; index--) {
+        const item = originalPreStepItems[index];
+        if (!(item instanceof RunToolApprovalItem)) {
+          continue;
+        }
+        const identity = getApprovalIdentity(item);
+        if (!identity) {
+          continue;
+        }
+        if (!pendingApprovalIdentities.has(identity)) {
+          continue;
+        }
+        rewindCount++;
+        pendingApprovalIdentities.delete(identity);
+        if (pendingApprovalIdentities.size === 0) {
+          break;
+        }
+      }
+      if (rewindCount > 0) {
+        state._currentTurnPersistedItemCount = Math.max(0, state._currentTurnPersistedItemCount - rewindCount);
+      }
+    }
+  }
+  const functionToolRuns = processedResponse.functions.filter((run2) => {
+    return functionCallIds.includes(run2.toolCall.callId);
+  });
+  const functionResults = await executeFunctionToolCalls(agent, functionToolRuns, runner, state);
+  const computerResults = processedResponse.computerActions.length > 0 ? await executeComputerActions(agent, processedResponse.computerActions, runner, state._context) : [];
+  const originalPreStepItemSet = new Set(originalPreStepItems);
+  const newItems = [];
+  const newItemsSet = /* @__PURE__ */ new Set();
+  const appendIfNew = (item) => {
+    if (originalPreStepItemSet.has(item) || newItemsSet.has(item)) {
+      return;
+    }
+    newItems.push(item);
+    newItemsSet.add(item);
+  };
+  for (const result of functionResults) {
+    appendIfNew(result.runItem);
+  }
+  for (const result of computerResults) {
+    appendIfNew(result);
+  }
+  const mcpApprovalRuns = processedResponse.mcpApprovalRequests.filter((run2) => {
+    return run2.requestItem.type === "tool_approval_item" && run2.requestItem.rawItem.type === "hosted_tool_call" && run2.requestItem.rawItem.providerData?.type === "mcp_approval_request";
+  });
+  const pendingHostedMCPApprovals = /* @__PURE__ */ new Set();
+  const pendingHostedMCPApprovalIds = /* @__PURE__ */ new Set();
+  for (const run2 of mcpApprovalRuns) {
+    const rawItem = run2.requestItem.rawItem;
+    if (rawItem.type !== "hosted_tool_call") {
+      continue;
+    }
+    const approvalRequestId = rawItem.id;
+    const approved = state._context.isToolApproved({
+      // Since this item name must be the same with the one sent from Responses API server
+      toolName: rawItem.name,
+      callId: approvalRequestId
+    });
+    if (typeof approved !== "undefined") {
+      const providerData = {
+        approve: approved,
+        approval_request_id: approvalRequestId,
+        reason: void 0
+      };
+      const responseItem = new RunToolCallItem({
+        type: "hosted_tool_call",
+        name: "mcp_approval_response",
+        providerData
+      }, agent);
+      appendIfNew(responseItem);
+    } else {
+      pendingHostedMCPApprovals.add(run2.requestItem);
+      pendingHostedMCPApprovalIds.add(approvalRequestId);
+      functionResults.push({
+        type: "hosted_mcp_tool_approval",
+        tool: run2.mcpTool,
+        runItem: run2.requestItem
+      });
+      appendIfNew(run2.requestItem);
+    }
+  }
+  const preStepItems = originalPreStepItems.filter((item) => {
+    if (!(item instanceof RunToolApprovalItem)) {
+      return true;
+    }
+    if (item.rawItem.type === "hosted_tool_call" && item.rawItem.providerData?.type === "mcp_approval_request") {
+      if (pendingHostedMCPApprovals.has(item)) {
+        return true;
+      }
+      const approvalRequestId = item.rawItem.id;
+      if (approvalRequestId) {
+        return pendingHostedMCPApprovalIds.has(approvalRequestId);
+      }
+      return false;
+    }
+    return false;
+  });
+  const completedStep = await maybeCompleteTurnFromToolResults({
+    agent,
+    runner,
+    state,
+    functionResults,
+    originalInput,
+    newResponse,
+    preStepItems,
+    newItems
+  });
+  if (completedStep) {
+    return completedStep;
+  }
+  return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, { type: "next_step_run_again" });
+}
+async function resolveTurnAfterModelResponse(agent, originalInput, originalPreStepItems, newResponse, processedResponse, runner, state) {
+  const preStepItems = originalPreStepItems;
+  const seenItems = new Set(originalPreStepItems);
+  const newItems = [];
+  const appendIfNew = (item) => {
+    if (seenItems.has(item)) {
+      return;
+    }
+    newItems.push(item);
+    seenItems.add(item);
+  };
+  for (const item of processedResponse.newItems) {
+    appendIfNew(item);
+  }
+  const [functionResults, computerResults, shellResults, applyPatchResults] = await Promise.all([
+    executeFunctionToolCalls(agent, processedResponse.functions, runner, state),
+    executeComputerActions(agent, processedResponse.computerActions, runner, state._context),
+    executeShellActions(agent, processedResponse.shellActions, runner, state._context),
+    executeApplyPatchOperations(agent, processedResponse.applyPatchActions, runner, state._context)
+  ]);
+  for (const result of functionResults) {
+    appendIfNew(result.runItem);
+  }
+  for (const item of computerResults) {
+    appendIfNew(item);
+  }
+  for (const item of shellResults) {
+    appendIfNew(item);
+  }
+  for (const item of applyPatchResults) {
+    appendIfNew(item);
+  }
+  if (processedResponse.mcpApprovalRequests.length > 0) {
+    for (const approvalRequest of processedResponse.mcpApprovalRequests) {
+      const toolData = approvalRequest.mcpTool.providerData;
+      const requestData = approvalRequest.requestItem.rawItem.providerData;
+      if (toolData.on_approval) {
+        const approvalResult = await toolData.on_approval(state._context, approvalRequest.requestItem);
+        const approvalResponseData = {
+          approve: approvalResult.approve,
+          approval_request_id: requestData.id,
+          reason: approvalResult.reason
+        };
+        newItems.push(new RunToolCallItem({
+          type: "hosted_tool_call",
+          name: "mcp_approval_response",
+          providerData: approvalResponseData
+        }, agent));
+      } else {
+        newItems.push(approvalRequest.requestItem);
+        const approvalItem = {
+          type: "hosted_mcp_tool_approval",
+          tool: approvalRequest.mcpTool,
+          runItem: new RunToolApprovalItem({
+            type: "hosted_tool_call",
+            name: requestData.name,
+            id: requestData.id,
+            arguments: requestData.arguments,
+            status: "in_progress",
+            providerData: requestData
+          }, agent)
+        };
+        functionResults.push(approvalItem);
+      }
+    }
+  }
+  if (processedResponse.handoffs.length > 0) {
+    return await executeHandoffCalls(agent, originalInput, preStepItems, newItems, newResponse, processedResponse.handoffs, runner, state._context);
+  }
+  const completedStep = await maybeCompleteTurnFromToolResults({
+    agent,
+    runner,
+    state,
+    functionResults,
+    originalInput,
+    newResponse,
+    preStepItems,
+    newItems
+  });
+  if (completedStep) {
+    return completedStep;
+  }
+  const hadToolCallsOrActions = (processedResponse.functions?.length ?? 0) > 0 || (processedResponse.computerActions?.length ?? 0) > 0 || (processedResponse.shellActions?.length ?? 0) > 0 || (processedResponse.applyPatchActions?.length ?? 0) > 0 || (processedResponse.mcpApprovalRequests?.length ?? 0) > 0 || (processedResponse.handoffs?.length ?? 0) > 0;
+  if (hadToolCallsOrActions) {
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, { type: "next_step_run_again" });
+  }
+  const messageItems = newItems.filter((item) => item instanceof RunMessageOutputItem);
+  const potentialFinalOutput = messageItems.length > 0 ? getLastTextFromOutputMessage(messageItems[messageItems.length - 1].rawItem) : void 0;
+  if (typeof potentialFinalOutput === "undefined") {
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, { type: "next_step_run_again" });
+  }
+  const hasPendingToolsOrApprovals = functionResults.some((result) => result.runItem instanceof RunToolApprovalItem);
+  if (!hasPendingToolsOrApprovals) {
+    if (agent.outputType === "text") {
+      return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, {
+        type: "next_step_final_output",
+        output: potentialFinalOutput
+      });
+    }
+    if (agent.outputType !== "text" && potentialFinalOutput) {
+      const { parser } = getSchemaAndParserFromInputType(agent.outputType, "final_output");
+      const [error46] = await safeExecute(() => parser(potentialFinalOutput));
+      if (error46) {
+        const outputErrorMessage = formatFinalOutputTypeError(error46);
+        addErrorToCurrentSpan({
+          message: outputErrorMessage,
+          data: {
+            error: String(error46)
+          }
+        });
+        throw new ModelBehaviorError(outputErrorMessage);
+      }
+      return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, { type: "next_step_final_output", output: potentialFinalOutput });
+    }
+  }
+  return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, { type: "next_step_run_again" });
+}
+async function maybeCompleteTurnFromToolResults({ agent, runner, state, functionResults, originalInput, newResponse, preStepItems, newItems }) {
+  const toolOutcome = await checkForFinalOutputFromTools(agent, functionResults, state);
+  if (toolOutcome.isFinalOutput) {
+    runner.emit("agent_end", state._context, agent, toolOutcome.finalOutput);
+    agent.emit("agent_end", state._context, toolOutcome.finalOutput);
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, {
+      type: "next_step_final_output",
+      output: toolOutcome.finalOutput
+    });
+  }
+  if (toolOutcome.isInterrupted) {
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newItems, {
+      type: "next_step_interruption",
+      data: {
+        interruptions: toolOutcome.interruptions
+      }
+    });
+  }
+  return null;
+}
+function getToolCallOutputItem(toolCall, output) {
+  const maybeStructuredOutputs = normalizeStructuredToolOutputs(output);
+  if (maybeStructuredOutputs) {
+    const structuredItems = maybeStructuredOutputs.map(convertStructuredToolOutputToInputItem);
+    return {
+      type: "function_call_result",
+      name: toolCall.name,
+      callId: toolCall.callId,
+      status: "completed",
+      output: structuredItems
+    };
+  }
+  return {
+    type: "function_call_result",
+    name: toolCall.name,
+    callId: toolCall.callId,
+    status: "completed",
+    output: {
+      type: "text",
+      text: toSmartString(output)
+    }
+  };
+}
+function normalizeFileValue(value) {
+  const directFile = value.file;
+  if (typeof directFile === "string" && directFile.length > 0) {
+    return directFile;
+  }
+  const normalizedObject = normalizeFileObjectCandidate(directFile);
+  if (normalizedObject) {
+    return normalizedObject;
+  }
+  const legacyValue = normalizeLegacyFileValue(value);
+  if (legacyValue) {
+    return legacyValue;
+  }
+  return null;
+}
+function normalizeFileObjectCandidate(value) {
+  if (!isRecord(value)) {
+    return null;
+  }
+  if ("data" in value && value.data !== void 0) {
+    const dataValue = value.data;
+    const hasStringData = typeof dataValue === "string" && dataValue.length > 0;
+    const hasBinaryData = dataValue instanceof Uint8Array && dataValue.length > 0;
+    if (!hasStringData && !hasBinaryData) {
+      return null;
+    }
+    if (!isNonEmptyString(value.mediaType) || !isNonEmptyString(value.filename)) {
+      return null;
+    }
+    return {
+      data: typeof dataValue === "string" ? dataValue : new Uint8Array(dataValue),
+      mediaType: value.mediaType,
+      filename: value.filename
+    };
+  }
+  if (isNonEmptyString(value.url)) {
+    const result = { url: value.url };
+    if (isNonEmptyString(value.filename)) {
+      result.filename = value.filename;
+    }
+    return result;
+  }
+  const referencedId = isNonEmptyString(value.id) && value.id || isNonEmptyString(value.fileId) && value.fileId;
+  if (referencedId) {
+    const result = { id: referencedId };
+    if (isNonEmptyString(value.filename)) {
+      result.filename = value.filename;
+    }
+    return result;
+  }
+  return null;
+}
+function normalizeLegacyFileValue(value) {
+  const filename = typeof value.filename === "string" && value.filename.length > 0 ? value.filename : void 0;
+  const mediaType = typeof value.mediaType === "string" && value.mediaType.length > 0 ? value.mediaType : void 0;
+  if (typeof value.fileData === "string" && value.fileData.length > 0) {
+    if (!mediaType || !filename) {
+      return null;
+    }
+    return { data: value.fileData, mediaType, filename };
+  }
+  if (value.fileData instanceof Uint8Array && value.fileData.length > 0) {
+    if (!mediaType || !filename) {
+      return null;
+    }
+    return { data: new Uint8Array(value.fileData), mediaType, filename };
+  }
+  if (typeof value.fileUrl === "string" && value.fileUrl.length > 0) {
+    const result = { url: value.fileUrl };
+    if (filename) {
+      result.filename = filename;
+    }
+    return result;
+  }
+  if (typeof value.fileId === "string" && value.fileId.length > 0) {
+    const result = { id: value.fileId };
+    if (filename) {
+      result.filename = filename;
+    }
+    return result;
+  }
+  return null;
+}
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
+function isNonEmptyString(value) {
+  return typeof value === "string" && value.length > 0;
+}
+function toInlineImageString(data, mediaType) {
+  if (typeof data === "string") {
+    if (mediaType && !data.startsWith("data:")) {
+      return asDataUrl(data, mediaType);
+    }
+    return data;
+  }
+  const base643 = encodeUint8ArrayToBase64(data);
+  return asDataUrl(base643, mediaType);
+}
+function asDataUrl(base643, mediaType) {
+  return mediaType ? `data:${mediaType};base64,${base643}` : base643;
+}
+async function executeFunctionToolCalls(agent, toolRuns, runner, state) {
+  async function runSingleTool(toolRun) {
+    let parsedArgs = toolRun.toolCall.arguments;
+    if (toolRun.tool.parameters) {
+      if (isZodObject(toolRun.tool.parameters)) {
+        parsedArgs = toolRun.tool.parameters.parse(parsedArgs);
+      } else {
+        parsedArgs = JSON.parse(parsedArgs);
+      }
+    }
+    const needsApproval = await toolRun.tool.needsApproval(state._context, parsedArgs, toolRun.toolCall.callId);
+    if (needsApproval) {
+      const approval = state._context.isToolApproved({
+        toolName: toolRun.tool.name,
+        callId: toolRun.toolCall.callId
+      });
+      if (approval === false) {
+        return withFunctionSpan(async (span) => {
+          const response = "Tool execution was not approved.";
+          span.setError({
+            message: response,
+            data: {
+              tool_name: toolRun.tool.name,
+              error: `Tool execution for ${toolRun.toolCall.callId} was manually rejected by user.`
+            }
+          });
+          span.spanData.output = response;
+          return {
+            type: "function_output",
+            tool: toolRun.tool,
+            output: response,
+            runItem: new RunToolCallOutputItem(getToolCallOutputItem(toolRun.toolCall, response), agent, response)
+          };
+        }, {
+          data: {
+            name: toolRun.tool.name
+          }
+        });
+      }
+      if (approval !== true) {
+        return {
+          type: "function_approval",
+          tool: toolRun.tool,
+          runItem: new RunToolApprovalItem(toolRun.toolCall, agent)
+        };
+      }
+    }
+    return withFunctionSpan(async (span) => {
+      if (runner.config.traceIncludeSensitiveData) {
+        span.spanData.input = toolRun.toolCall.arguments;
+      }
+      try {
+        runner.emit("agent_tool_start", state._context, agent, toolRun.tool, {
+          toolCall: toolRun.toolCall
+        });
+        agent.emit("agent_tool_start", state._context, toolRun.tool, {
+          toolCall: toolRun.toolCall
+        });
+        const toolOutput = await toolRun.tool.invoke(state._context, toolRun.toolCall.arguments, { toolCall: toolRun.toolCall });
+        const stringResult = toSmartString(toolOutput);
+        runner.emit("agent_tool_end", state._context, agent, toolRun.tool, stringResult, { toolCall: toolRun.toolCall });
+        agent.emit("agent_tool_end", state._context, toolRun.tool, stringResult, { toolCall: toolRun.toolCall });
+        if (runner.config.traceIncludeSensitiveData) {
+          span.spanData.output = stringResult;
+        }
+        const functionResult = {
+          type: "function_output",
+          tool: toolRun.tool,
+          output: toolOutput,
+          runItem: new RunToolCallOutputItem(getToolCallOutputItem(toolRun.toolCall, toolOutput), agent, toolOutput)
+        };
+        const nestedRunResult = consumeAgentToolRunResult(toolRun.toolCall);
+        if (nestedRunResult) {
+          functionResult.agentRunResult = nestedRunResult;
+          const nestedInterruptions = nestedRunResult.interruptions;
+          if (nestedInterruptions.length > 0) {
+            functionResult.interruptions = nestedInterruptions;
+          }
+        }
+        return functionResult;
+      } catch (error46) {
+        span.setError({
+          message: "Error running tool",
+          data: {
+            tool_name: toolRun.tool.name,
+            error: String(error46)
+          }
+        });
+        throw error46;
+      }
+    }, {
+      data: {
+        name: toolRun.tool.name
+      }
+    });
+  }
+  try {
+    const results = await Promise.all(toolRuns.map(runSingleTool));
+    return results;
+  } catch (e) {
+    throw new ToolCallError(`Failed to run function tools: ${e}`, e, state);
+  }
+}
+async function _runComputerActionAndScreenshot(computer, toolCall) {
+  const action = toolCall.action;
+  let screenshot;
+  switch (action.type) {
+    case "click":
+      await computer.click(action.x, action.y, action.button);
+      break;
+    case "double_click":
+      await computer.doubleClick(action.x, action.y);
+      break;
+    case "drag":
+      await computer.drag(action.path.map((p) => [p.x, p.y]));
+      break;
+    case "keypress":
+      await computer.keypress(action.keys);
+      break;
+    case "move":
+      await computer.move(action.x, action.y);
+      break;
+    case "screenshot":
+      screenshot = await computer.screenshot();
+      break;
+    case "scroll":
+      await computer.scroll(action.x, action.y, action.scroll_x, action.scroll_y);
+      break;
+    case "type":
+      await computer.type(action.text);
+      break;
+    case "wait":
+      await computer.wait();
+      break;
+    default:
+      action;
+      break;
+  }
+  if (typeof screenshot !== "undefined") {
+    return screenshot;
+  }
+  if (typeof computer.screenshot === "function") {
+    screenshot = await computer.screenshot();
+    if (typeof screenshot !== "undefined") {
+      return screenshot;
+    }
+  }
+  throw new Error("Computer does not implement screenshot()");
+}
+function toErrorMessage(error46) {
+  if (error46 instanceof Error) {
+    return error46.message || error46.toString();
+  }
+  try {
+    return JSON.stringify(error46);
+  } catch {
+    return String(error46);
+  }
+}
+async function executeShellActions(agent, actions, runner, runContext, customLogger = void 0) {
+  const _logger = customLogger ?? logger_default;
+  const results = [];
+  for (const action of actions) {
+    const shellTool2 = action.shell;
+    const toolCall = action.toolCall;
+    const approvalItem = new RunToolApprovalItem(toolCall, agent, shellTool2.name);
+    const requiresApproval = await shellTool2.needsApproval(runContext, toolCall.action, toolCall.callId);
+    if (requiresApproval) {
+      if (shellTool2.onApproval) {
+        const decision = await shellTool2.onApproval(runContext, approvalItem);
+        if (decision.approve === true) {
+          runContext.approveTool(approvalItem);
+        } else if (decision.approve === false) {
+          runContext.rejectTool(approvalItem);
+        }
+      }
+      const approval = runContext.isToolApproved({
+        toolName: shellTool2.name,
+        callId: toolCall.callId
+      });
+      if (approval === false) {
+        const response = "Tool execution was not approved.";
+        const rejectionOutput = {
+          stdout: "",
+          stderr: response,
+          outcome: { type: "exit", exitCode: null }
+        };
+        results.push(new RunToolCallOutputItem({
+          type: "shell_call_output",
+          callId: toolCall.callId,
+          output: [rejectionOutput]
+        }, agent, response));
+        continue;
+      }
+      if (approval !== true) {
+        results.push(approvalItem);
+        continue;
+      }
+    }
+    runner.emit("agent_tool_start", runContext, agent, shellTool2, {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_start", runContext, shellTool2, { toolCall });
+    }
+    let shellOutputs;
+    const providerMeta = {};
+    let maxOutputLength;
+    try {
+      const shellResult = await shellTool2.shell.run(toolCall.action);
+      shellOutputs = shellResult.output ?? [];
+      if (shellResult.providerData) {
+        Object.assign(providerMeta, shellResult.providerData);
+      }
+      if (typeof shellResult.maxOutputLength === "number") {
+        maxOutputLength = shellResult.maxOutputLength;
+      }
+    } catch (err) {
+      const errorText = toErrorMessage(err);
+      shellOutputs = [
+        {
+          stdout: "",
+          stderr: errorText,
+          outcome: { type: "exit", exitCode: null }
+        }
+      ];
+      _logger.error("Failed to execute shell action:", err);
+    }
+    shellOutputs = shellOutputs ?? [];
+    runner.emit("agent_tool_end", runContext, agent, shellTool2, JSON.stringify(shellOutputs), {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_end", runContext, shellTool2, JSON.stringify(shellOutputs), {
+        toolCall
+      });
+    }
+    const rawItem = {
+      type: "shell_call_output",
+      callId: toolCall.callId,
+      output: shellOutputs ?? []
+    };
+    if (typeof maxOutputLength === "number") {
+      rawItem.maxOutputLength = maxOutputLength;
+    }
+    if (Object.keys(providerMeta).length > 0) {
+      rawItem.providerData = providerMeta;
+    }
+    results.push(new RunToolCallOutputItem(rawItem, agent, rawItem.output));
+  }
+  return results;
+}
+async function executeApplyPatchOperations(agent, actions, runner, runContext, customLogger = void 0) {
+  const _logger = customLogger ?? logger_default;
+  const results = [];
+  for (const action of actions) {
+    const applyPatchTool2 = action.applyPatch;
+    const toolCall = action.toolCall;
+    const approvalItem = new RunToolApprovalItem(toolCall, agent, applyPatchTool2.name);
+    const requiresApproval = await applyPatchTool2.needsApproval(runContext, toolCall.operation, toolCall.callId);
+    if (requiresApproval) {
+      if (applyPatchTool2.onApproval) {
+        const decision = await applyPatchTool2.onApproval(runContext, approvalItem);
+        if (decision.approve === true) {
+          runContext.approveTool(approvalItem);
+        } else if (decision.approve === false) {
+          runContext.rejectTool(approvalItem);
+        }
+      }
+      const approval = runContext.isToolApproved({
+        toolName: applyPatchTool2.name,
+        callId: toolCall.callId
+      });
+      if (approval === false) {
+        const response = "Tool execution was not approved.";
+        results.push(new RunToolCallOutputItem({
+          type: "apply_patch_call_output",
+          callId: toolCall.callId,
+          status: "failed",
+          output: response
+        }, agent, response));
+        continue;
+      }
+      if (approval !== true) {
+        results.push(approvalItem);
+        continue;
+      }
+    }
+    runner.emit("agent_tool_start", runContext, agent, applyPatchTool2, {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_start", runContext, applyPatchTool2, {
+        toolCall
+      });
+    }
+    let status = "completed";
+    let output = "";
+    try {
+      let result;
+      switch (toolCall.operation.type) {
+        case "create_file":
+          result = await applyPatchTool2.editor.createFile(toolCall.operation);
+          break;
+        case "update_file":
+          result = await applyPatchTool2.editor.updateFile(toolCall.operation);
+          break;
+        case "delete_file":
+          result = await applyPatchTool2.editor.deleteFile(toolCall.operation);
+          break;
+        default:
+          throw new Error("Unsupported apply_patch operation");
+      }
+      if (result && typeof result.status === "string") {
+        status = result.status;
+      }
+      if (result && typeof result.output === "string") {
+        output = result.output;
+      }
+    } catch (err) {
+      status = "failed";
+      output = toErrorMessage(err);
+      _logger.error("Failed to execute apply_patch operation:", err);
+    }
+    runner.emit("agent_tool_end", runContext, agent, applyPatchTool2, output, {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_end", runContext, applyPatchTool2, output, {
+        toolCall
+      });
+    }
+    const rawItem = {
+      type: "apply_patch_call_output",
+      callId: toolCall.callId,
+      status
+    };
+    if (output) {
+      rawItem.output = output;
+    }
+    results.push(new RunToolCallOutputItem(rawItem, agent, output));
+  }
+  return results;
+}
+async function executeComputerActions(agent, actions, runner, runContext, customLogger = void 0) {
+  const _logger = customLogger ?? logger_default;
+  const results = [];
+  for (const action of actions) {
+    const computer = action.computer.computer;
+    const toolCall = action.toolCall;
+    runner.emit("agent_tool_start", runContext, agent, action.computer, {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_start", runContext, action.computer, { toolCall });
+    }
+    let output;
+    try {
+      output = await _runComputerActionAndScreenshot(computer, toolCall);
+    } catch (err) {
+      _logger.error("Failed to execute computer action:", err);
+      output = "";
+    }
+    runner.emit("agent_tool_end", runContext, agent, action.computer, output, {
+      toolCall
+    });
+    if (typeof agent.emit === "function") {
+      agent.emit("agent_tool_end", runContext, action.computer, output, {
+        toolCall
+      });
+    }
+    const imageUrl = output ? `data:image/png;base64,${output}` : "";
+    const rawItem = {
+      type: "computer_call_result",
+      callId: toolCall.callId,
+      output: { type: "computer_screenshot", data: imageUrl }
+    };
+    results.push(new RunToolCallOutputItem(rawItem, agent, imageUrl));
+  }
+  return results;
+}
+async function executeHandoffCalls(agent, originalInput, preStepItems, newStepItems, newResponse, runHandoffs, runner, runContext) {
+  newStepItems = [...newStepItems];
+  if (runHandoffs.length === 0) {
+    logger_default.warn("Incorrectly called executeHandoffCalls with no handoffs. This should not happen. Moving on.");
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newStepItems, { type: "next_step_run_again" });
+  }
+  if (runHandoffs.length > 1) {
+    const outputMessage = "Multiple handoffs detected, ignoring this one.";
+    for (let i = 1; i < runHandoffs.length; i++) {
+      newStepItems.push(new RunToolCallOutputItem(getToolCallOutputItem(runHandoffs[i].toolCall, outputMessage), agent, outputMessage));
+    }
+  }
+  const actualHandoff = runHandoffs[0];
+  return withHandoffSpan(async (handoffSpan) => {
+    const handoff2 = actualHandoff.handoff;
+    const newAgent = await handoff2.onInvokeHandoff(runContext, actualHandoff.toolCall.arguments);
+    handoffSpan.spanData.to_agent = newAgent.name;
+    if (runHandoffs.length > 1) {
+      const requestedAgents = runHandoffs.map((h) => h.handoff.agentName);
+      handoffSpan.setError({
+        message: "Multiple handoffs requested",
+        data: {
+          requested_agents: requestedAgents
+        }
+      });
+    }
+    newStepItems.push(new RunHandoffOutputItem(getToolCallOutputItem(actualHandoff.toolCall, getTransferMessage(newAgent)), agent, newAgent));
+    runner.emit("agent_handoff", runContext, agent, newAgent);
+    agent.emit("agent_handoff", runContext, newAgent);
+    const inputFilter = handoff2.inputFilter ?? runner.config.handoffInputFilter;
+    if (inputFilter) {
+      logger_default.debug("Filtering inputs for handoff");
+      if (typeof inputFilter !== "function") {
+        handoffSpan.setError({
+          message: "Invalid input filter",
+          data: {
+            details: "not callable"
+          }
+        });
+      }
+      const handoffInputData = {
+        inputHistory: Array.isArray(originalInput) ? [...originalInput] : originalInput,
+        preHandoffItems: [...preStepItems],
+        newItems: [...newStepItems],
+        runContext
+      };
+      const filtered = inputFilter(handoffInputData);
+      originalInput = filtered.inputHistory;
+      preStepItems = filtered.preHandoffItems;
+      newStepItems = filtered.newItems;
+    }
+    return new SingleStepResult(originalInput, newResponse, preStepItems, newStepItems, { type: "next_step_handoff", newAgent });
+  }, {
+    data: {
+      from_agent: agent.name
+    }
+  });
+}
+var NOT_FINAL_OUTPUT = {
+  isFinalOutput: false,
+  isInterrupted: void 0
+};
+async function checkForFinalOutputFromTools(agent, toolResults, state) {
+  if (toolResults.length === 0) {
+    return NOT_FINAL_OUTPUT;
+  }
+  const interruptions = [];
+  for (const result of toolResults) {
+    if (result.runItem instanceof RunToolApprovalItem) {
+      interruptions.push(result.runItem);
+    }
+    if (result.type === "function_output") {
+      if (Array.isArray(result.interruptions)) {
+        interruptions.push(...result.interruptions);
+      } else if (result.agentRunResult) {
+        const nestedInterruptions = result.agentRunResult.interruptions;
+        if (nestedInterruptions.length > 0) {
+          interruptions.push(...nestedInterruptions);
+        }
+      }
+    }
+  }
+  if (interruptions.length > 0) {
+    return {
+      isFinalOutput: false,
+      isInterrupted: true,
+      interruptions
+    };
+  }
+  if (agent.toolUseBehavior === "run_llm_again") {
+    return NOT_FINAL_OUTPUT;
+  }
+  const firstToolResult = toolResults[0];
+  if (agent.toolUseBehavior === "stop_on_first_tool") {
+    if (firstToolResult?.type === "function_output") {
+      const stringOutput = toSmartString(firstToolResult.output);
+      return {
+        isFinalOutput: true,
+        isInterrupted: void 0,
+        finalOutput: stringOutput
+      };
+    }
+    return NOT_FINAL_OUTPUT;
+  }
+  const toolUseBehavior = agent.toolUseBehavior;
+  if (typeof toolUseBehavior === "object") {
+    const stoppingTool = toolResults.find((r) => toolUseBehavior.stopAtToolNames.includes(r.tool.name));
+    if (stoppingTool?.type === "function_output") {
+      const stringOutput = toSmartString(stoppingTool.output);
+      return {
+        isFinalOutput: true,
+        isInterrupted: void 0,
+        finalOutput: stringOutput
+      };
+    }
+    return NOT_FINAL_OUTPUT;
+  }
+  if (typeof toolUseBehavior === "function") {
+    return toolUseBehavior(state._context, toolResults);
+  }
+  throw new UserError(`Invalid toolUseBehavior: ${toolUseBehavior}`, state);
+}
+function getRunItemStreamEventName(item) {
+  if (item instanceof RunMessageOutputItem) {
+    return "message_output_created";
+  }
+  if (item instanceof RunHandoffCallItem) {
+    return "handoff_requested";
+  }
+  if (item instanceof RunHandoffOutputItem) {
+    return "handoff_occurred";
+  }
+  if (item instanceof RunToolCallItem) {
+    return "tool_called";
+  }
+  if (item instanceof RunToolCallOutputItem) {
+    return "tool_output";
+  }
+  if (item instanceof RunReasoningItem) {
+    return "reasoning_item_created";
+  }
+  if (item instanceof RunToolApprovalItem) {
+    return "tool_approval_requested";
+  }
+  return void 0;
+}
+function enqueueRunItemStreamEvent(result, item) {
+  const itemName = getRunItemStreamEventName(item);
+  if (!itemName) {
+    logger_default.warn("Unknown item type: ", item);
+    return;
+  }
+  result._addItem(new RunItemStreamEvent(itemName, item));
+}
+function streamStepItemsToRunResult(result, items) {
+  for (const item of items) {
+    enqueueRunItemStreamEvent(result, item);
+  }
+}
+function addStepToRunResult(result, step, options) {
+  const skippedItems = options?.skipItems;
+  for (const item of step.newStepItems) {
+    if (skippedItems?.has(item)) {
+      continue;
+    }
+    enqueueRunItemStreamEvent(result, item);
+  }
+}
+var _agentToTools;
+var AgentToolUseTracker = class {
+  constructor() {
+    __privateAdd(this, _agentToTools, /* @__PURE__ */ new Map());
+  }
+  addToolUse(agent, toolNames) {
+    __privateGet(this, _agentToTools).set(agent, toolNames);
+  }
+  hasUsedTools(agent) {
+    return __privateGet(this, _agentToTools).has(agent);
+  }
+  toJSON() {
+    return Object.fromEntries(Array.from(__privateGet(this, _agentToTools).entries()).map(([agent, toolNames]) => {
+      return [agent.name, toolNames];
+    }));
+  }
+};
+_agentToTools = new WeakMap();
+function toInputItemList(input) {
+  if (typeof input === "string") {
+    return [
+      {
+        type: "message",
+        role: "user",
+        content: input
+      }
+    ];
+  }
+  return [...input];
+}
+function extractOutputItemsFromRunItems(items) {
+  return items.filter((item) => item.type !== "tool_approval_item").map((item) => item.rawItem);
+}
+function normalizeItemsForSessionPersistence(items) {
+  return items.map((item) => sanitizeValueForSession(stripTransientCallIds(item)));
+}
+function sanitizeValueForSession(value, context = {}) {
+  if (value === null || value === void 0) {
+    return value;
+  }
+  const binary = toUint8ArrayIfBinary(value);
+  if (binary) {
+    return toDataUrlFromBytes(binary, context.mediaType);
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeValueForSession(entry, context));
+  }
+  if (!isPlainObject2(value)) {
+    return value;
+  }
+  const record2 = value;
+  const result = {};
+  const mediaType = typeof record2.mediaType === "string" && record2.mediaType.length > 0 ? record2.mediaType : context.mediaType;
+  for (const [key, entry] of Object.entries(record2)) {
+    const nextContext = key === "data" || key === "fileData" ? { mediaType } : context;
+    result[key] = sanitizeValueForSession(entry, nextContext);
+  }
+  return result;
+}
+function toUint8ArrayIfBinary(value) {
+  if (value instanceof ArrayBuffer) {
+    return new Uint8Array(value);
+  }
+  if (isArrayBufferView(value)) {
+    const view = value;
+    return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  }
+  if (isNodeBuffer(value)) {
+    const view = value;
+    return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  }
+  if (isSerializedBufferSnapshot(value)) {
+    const snapshot = value;
+    return Uint8Array.from(snapshot.data);
+  }
+  return void 0;
+}
+function toDataUrlFromBytes(bytes, mediaType) {
+  const base643 = encodeUint8ArrayToBase64(bytes);
+  const type = mediaType && !mediaType.startsWith("data:") ? mediaType : "text/plain";
+  return `data:${type};base64,${base643}`;
+}
+function isPlainObject2(value) {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+function stripTransientCallIds(value) {
+  if (value === null || value === void 0) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => stripTransientCallIds(entry));
+  }
+  if (!isPlainObject2(value)) {
+    return value;
+  }
+  const record2 = value;
+  const result = {};
+  const isProtocolItem = typeof record2.type === "string" && record2.type.length > 0;
+  const shouldStripId = isProtocolItem && shouldStripIdForType(record2.type);
+  for (const [key, entry] of Object.entries(record2)) {
+    if (shouldStripId && key === "id") {
+      continue;
+    }
+    result[key] = stripTransientCallIds(entry);
+  }
+  return result;
+}
+function shouldStripIdForType(type) {
+  switch (type) {
+    case "function_call":
+    case "function_call_result":
+      return true;
+    default:
+      return false;
+  }
+}
+async function saveToSession(session, sessionInputItems, result) {
+  if (!session) {
+    return;
+  }
+  const inputItems = sessionInputItems ?? [];
+  const state = result.state;
+  const alreadyPersisted = state._currentTurnPersistedItemCount ?? 0;
+  const newRunItems = result.newItems.slice(alreadyPersisted);
+  if (process.env.OPENAI_AGENTS__DEBUG_SAVE_SESSION) {
+    console.debug("saveToSession:newRunItems", newRunItems.map((item) => item.type));
+  }
+  const outputItems = extractOutputItemsFromRunItems(newRunItems);
+  const itemsToSave = [...inputItems, ...outputItems];
+  if (itemsToSave.length === 0) {
+    state._currentTurnPersistedItemCount = alreadyPersisted + newRunItems.length;
+    return;
+  }
+  const sanitizedItems = normalizeItemsForSessionPersistence(itemsToSave);
+  await session.addItems(sanitizedItems);
+  state._currentTurnPersistedItemCount = alreadyPersisted + newRunItems.length;
+}
+async function saveStreamInputToSession(session, sessionInputItems) {
+  if (!session) {
+    return;
+  }
+  if (!sessionInputItems || sessionInputItems.length === 0) {
+    return;
+  }
+  const sanitizedInput = normalizeItemsForSessionPersistence(sessionInputItems);
+  await session.addItems(sanitizedInput);
+}
+async function saveStreamResultToSession(session, result) {
+  if (!session) {
+    return;
+  }
+  const state = result.state;
+  const alreadyPersisted = state._currentTurnPersistedItemCount ?? 0;
+  const newRunItems = result.newItems.slice(alreadyPersisted);
+  const itemsToSave = extractOutputItemsFromRunItems(newRunItems);
+  if (itemsToSave.length === 0) {
+    state._currentTurnPersistedItemCount = alreadyPersisted + newRunItems.length;
+    return;
+  }
+  const sanitizedItems = normalizeItemsForSessionPersistence(itemsToSave);
+  await session.addItems(sanitizedItems);
+  state._currentTurnPersistedItemCount = alreadyPersisted + newRunItems.length;
+}
+async function prepareInputItemsWithSession(input, session, sessionInputCallback, options) {
+  if (!session) {
+    return {
+      preparedInput: input,
+      sessionItems: void 0
+    };
+  }
+  const includeHistoryInPreparedInput = options?.includeHistoryInPreparedInput ?? true;
+  const preserveDroppedNewItems = options?.preserveDroppedNewItems ?? false;
+  const history = await session.getItems();
+  const newInputItems = Array.isArray(input) ? [...input] : toInputItemList(input);
+  if (!sessionInputCallback) {
+    return {
+      preparedInput: includeHistoryInPreparedInput ? [...history, ...newInputItems] : newInputItems,
+      sessionItems: newInputItems
+    };
+  }
+  const historySnapshot = history.slice();
+  const newInputSnapshot = newInputItems.slice();
+  const combined = await sessionInputCallback(history, newInputItems);
+  if (!Array.isArray(combined)) {
+    throw new UserError("Session input callback must return an array of AgentInputItem objects.");
+  }
+  const historyCounts = buildItemFrequencyMap(historySnapshot);
+  const newInputCounts = buildItemFrequencyMap(newInputSnapshot);
+  const historyRefs = buildItemReferenceMap(historySnapshot);
+  const newInputRefs = buildItemReferenceMap(newInputSnapshot);
+  const appended = [];
+  for (const item of combined) {
+    const key = sessionItemKey(item);
+    if (consumeReference(newInputRefs, key, item)) {
+      decrementCount(newInputCounts, key);
+      appended.push(item);
+      continue;
+    }
+    if (consumeReference(historyRefs, key, item)) {
+      decrementCount(historyCounts, key);
+      continue;
+    }
+    const historyRemaining = historyCounts.get(key) ?? 0;
+    if (historyRemaining > 0) {
+      historyCounts.set(key, historyRemaining - 1);
+      continue;
+    }
+    const newRemaining = newInputCounts.get(key) ?? 0;
+    if (newRemaining > 0) {
+      newInputCounts.set(key, newRemaining - 1);
+      appended.push(item);
+      continue;
+    }
+    appended.push(item);
+  }
+  const preparedItems = includeHistoryInPreparedInput ? combined : appended.length > 0 ? appended : preserveDroppedNewItems ? newInputSnapshot : [];
+  return {
+    preparedInput: preparedItems,
+    // Respect callbacks that intentionally drop the latest inputs (e.g. to redact sensitive
+    // values) by persisting only the items they kept in the combined array.
+    sessionItems: appended
+  };
+}
+function normalizeStructuredToolOutputs(output) {
+  if (Array.isArray(output)) {
+    const structured = [];
+    for (const item of output) {
+      const normalized2 = normalizeStructuredToolOutput(item);
+      if (!normalized2) {
+        return null;
+      }
+      structured.push(normalized2);
+    }
+    return structured;
+  }
+  const normalized = normalizeStructuredToolOutput(output);
+  return normalized ? [normalized] : null;
+}
+function normalizeStructuredToolOutput(value) {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const type = value.type;
+  if (type === "text" && typeof value.text === "string") {
+    const output = { type: "text", text: value.text };
+    if (isRecord(value.providerData)) {
+      output.providerData = value.providerData;
+    }
+    return output;
+  }
+  if (type === "image") {
+    const output = { type: "image" };
+    let imageString;
+    let imageFileId;
+    const fallbackImageMediaType = isNonEmptyString(value.mediaType) ? value.mediaType : void 0;
+    const imageField = value.image;
+    if (typeof imageField === "string" && imageField.length > 0) {
+      imageString = imageField;
+    } else if (isRecord(imageField)) {
+      const imageObj = imageField;
+      const inlineMediaType = isNonEmptyString(imageObj.mediaType) ? imageObj.mediaType : fallbackImageMediaType;
+      if (isNonEmptyString(imageObj.url)) {
+        imageString = imageObj.url;
+      } else if (isNonEmptyString(imageObj.data)) {
+        imageString = toInlineImageString(imageObj.data, inlineMediaType);
+      } else if (imageObj.data instanceof Uint8Array && imageObj.data.length > 0) {
+        imageString = toInlineImageString(imageObj.data, inlineMediaType);
+      }
+      if (!imageString) {
+        const candidateId = isNonEmptyString(imageObj.fileId) && imageObj.fileId || isNonEmptyString(imageObj.id) && imageObj.id || void 0;
+        if (candidateId) {
+          imageFileId = candidateId;
+        }
+      }
+    }
+    if (!imageString && typeof value.imageUrl === "string" && value.imageUrl.length > 0) {
+      imageString = value.imageUrl;
+    }
+    if (!imageFileId && typeof value.fileId === "string" && value.fileId.length > 0) {
+      imageFileId = value.fileId;
+    }
+    if (!imageString && typeof value.data === "string" && value.data.length > 0) {
+      imageString = fallbackImageMediaType ? toInlineImageString(value.data, fallbackImageMediaType) : value.data;
+    } else if (!imageString && value.data instanceof Uint8Array && value.data.length > 0) {
+      imageString = toInlineImageString(value.data, fallbackImageMediaType);
+    }
+    if (typeof value.detail === "string" && value.detail.length > 0) {
+      output.detail = value.detail;
+    }
+    if (imageString) {
+      output.image = imageString;
+    } else if (imageFileId) {
+      output.image = { fileId: imageFileId };
+    } else {
+      return null;
+    }
+    if (isRecord(value.providerData)) {
+      output.providerData = value.providerData;
+    }
+    return output;
+  }
+  if (type === "file") {
+    const fileValue = normalizeFileValue(value);
+    if (!fileValue) {
+      return null;
+    }
+    const output = { type: "file", file: fileValue };
+    if (isRecord(value.providerData)) {
+      output.providerData = value.providerData;
+    }
+    return output;
+  }
+  return null;
+}
+function convertStructuredToolOutputToInputItem(output) {
+  if (output.type === "text") {
+    const result = {
+      type: "input_text",
+      text: output.text
+    };
+    if (output.providerData) {
+      result.providerData = output.providerData;
+    }
+    return result;
+  }
+  if (output.type === "image") {
+    const result = { type: "input_image" };
+    if (typeof output.detail === "string" && output.detail.length > 0) {
+      result.detail = output.detail;
+    }
+    if (typeof output.image === "string" && output.image.length > 0) {
+      result.image = output.image;
+    } else if (isRecord(output.image)) {
+      const imageObj = output.image;
+      const inlineMediaType = isNonEmptyString(imageObj.mediaType) ? imageObj.mediaType : void 0;
+      if (isNonEmptyString(imageObj.url)) {
+        result.image = imageObj.url;
+      } else if (isNonEmptyString(imageObj.data)) {
+        result.image = inlineMediaType && !imageObj.data.startsWith("data:") ? asDataUrl(imageObj.data, inlineMediaType) : imageObj.data;
+      } else if (imageObj.data instanceof Uint8Array && imageObj.data.length > 0) {
+        const base643 = encodeUint8ArrayToBase64(imageObj.data);
+        result.image = asDataUrl(base643, inlineMediaType);
+      } else {
+        const referencedId = isNonEmptyString(imageObj.fileId) && imageObj.fileId || isNonEmptyString(imageObj.id) && imageObj.id || void 0;
+        if (referencedId) {
+          result.image = { id: referencedId };
+        }
+      }
+    }
+    if (output.providerData) {
+      result.providerData = output.providerData;
+    }
+    return result;
+  }
+  if (output.type === "file") {
+    const result = { type: "input_file" };
+    const fileValue = output.file;
+    if (typeof fileValue === "string") {
+      result.file = fileValue;
+    } else if (fileValue && typeof fileValue === "object") {
+      const record2 = fileValue;
+      if ("data" in record2 && record2.data) {
+        const mediaType = record2.mediaType ?? "text/plain";
+        if (typeof record2.data === "string") {
+          result.file = asDataUrl(record2.data, mediaType);
+        } else {
+          const base643 = encodeUint8ArrayToBase64(record2.data);
+          result.file = asDataUrl(base643, mediaType);
+        }
+      } else if (typeof record2.url === "string" && record2.url.length > 0) {
+        result.file = { url: record2.url };
+      } else {
+        const referencedId = typeof record2.id === "string" && record2.id.length > 0 && record2.id || (typeof record2.fileId === "string" && record2.fileId.length > 0 ? record2.fileId : void 0);
+        if (referencedId) {
+          result.file = { id: referencedId };
+        }
+      }
+      if (typeof record2.filename === "string" && record2.filename.length > 0) {
+        result.filename = record2.filename;
+      }
+    }
+    if (output.providerData) {
+      result.providerData = output.providerData;
+    }
+    return result;
+  }
+  const exhaustiveCheck = output;
+  return exhaustiveCheck;
+}
+function buildItemFrequencyMap(items) {
+  const counts = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const key = sessionItemKey(item);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+function buildItemReferenceMap(items) {
+  const refs = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const key = sessionItemKey(item);
+    const list = refs.get(key);
+    if (list) {
+      list.push(item);
+    } else {
+      refs.set(key, [item]);
+    }
+  }
+  return refs;
+}
+function consumeReference(refs, key, target) {
+  const candidates = refs.get(key);
+  if (!candidates || candidates.length === 0) {
+    return false;
+  }
+  const index = candidates.findIndex((candidate) => candidate === target);
+  if (index === -1) {
+    return false;
+  }
+  candidates.splice(index, 1);
+  if (candidates.length === 0) {
+    refs.delete(key);
+  }
+  return true;
+}
+function decrementCount(map2, key) {
+  const remaining = (map2.get(key) ?? 0) - 1;
+  if (remaining <= 0) {
+    map2.delete(key);
+  } else {
+    map2.set(key, remaining);
+  }
+}
+function sessionItemKey(item) {
+  return JSON.stringify(item, sessionSerializationReplacer);
+}
+function sessionSerializationReplacer(_key, value) {
+  if (value instanceof ArrayBuffer) {
+    return {
+      __type: "ArrayBuffer",
+      data: encodeUint8ArrayToBase64(new Uint8Array(value))
+    };
+  }
+  if (isArrayBufferView(value)) {
+    const view = value;
+    return {
+      __type: view.constructor.name,
+      data: encodeUint8ArrayToBase64(new Uint8Array(view.buffer, view.byteOffset, view.byteLength))
+    };
+  }
+  if (isNodeBuffer(value)) {
+    const view = value;
+    return {
+      __type: "Buffer",
+      data: encodeUint8ArrayToBase64(new Uint8Array(view.buffer, view.byteOffset, view.byteLength))
+    };
+  }
+  if (isSerializedBufferSnapshot(value)) {
+    return {
+      __type: "Buffer",
+      data: encodeUint8ArrayToBase64(Uint8Array.from(value.data))
+    };
+  }
+  return value;
+}
 
 // node_modules/@openai/agents-core/dist/runState.mjs
 var CURRENT_SCHEMA_VERSION = "1.0";
@@ -18533,6 +22972,1795 @@ var SerializedRunState = external_exports.object({
   currentTurnPersistedItemCount: external_exports.number().int().min(0).optional(),
   trace: serializedTraceSchema.nullable()
 });
+var RunState = class _RunState {
+  constructor(context, originalInput, startingAgent, maxTurns) {
+    /**
+     * Current turn number in the conversation.
+     */
+    __publicField(this, "_currentTurn", 0);
+    /**
+     * The agent currently handling the conversation.
+     */
+    __publicField(this, "_currentAgent");
+    /**
+     * Original user input prior to any processing.
+     */
+    __publicField(this, "_originalInput");
+    /**
+     * Responses from the model so far.
+     */
+    __publicField(this, "_modelResponses");
+    /**
+     * Active tracing span for the current agent if tracing is enabled.
+     */
+    __publicField(this, "_currentAgentSpan");
+    /**
+     * Run context tracking approvals, usage, and other metadata.
+     */
+    __publicField(this, "_context");
+    /**
+     * Tracks what tools each agent has used.
+     */
+    __publicField(this, "_toolUseTracker");
+    /**
+     * Items generated by the agent during the run.
+     */
+    __publicField(this, "_generatedItems");
+    /**
+     * Number of `_generatedItems` already flushed to session storage for the current turn.
+     *
+     * Persisting the entire turn on every save would duplicate responses and tool outputs.
+     * Instead, `saveToSession` appends only the delta since the previous write. This counter
+     * tracks how many generated run items from *this turn* were already written so the next
+     * save can slice off only the new entries. When a turn is interrupted (e.g., awaiting tool
+     * approval) and later resumed, we rewind the counter before continuing so the pending tool
+     * output still gets stored.
+     */
+    __publicField(this, "_currentTurnPersistedItemCount");
+    /**
+     * Maximum allowed turns before forcing termination.
+     */
+    __publicField(this, "_maxTurns");
+    /**
+     * Whether the run has an active agent step in progress.
+     */
+    __publicField(this, "_noActiveAgentRun", true);
+    /**
+     * Last model response for the previous turn.
+     */
+    __publicField(this, "_lastTurnResponse");
+    /**
+     * Results from input guardrails applied to the run.
+     */
+    __publicField(this, "_inputGuardrailResults");
+    /**
+     * Results from output guardrails applied to the run.
+     */
+    __publicField(this, "_outputGuardrailResults");
+    /**
+     * Next step computed for the agent to take.
+     */
+    __publicField(this, "_currentStep");
+    /**
+     * Parsed model response after applying guardrails and tools.
+     */
+    __publicField(this, "_lastProcessedResponse");
+    /**
+     * Trace associated with this run if tracing is enabled.
+     */
+    __publicField(this, "_trace", null);
+    this._context = context;
+    this._originalInput = structuredClone(originalInput);
+    this._modelResponses = [];
+    this._currentAgentSpan = void 0;
+    this._currentAgent = startingAgent;
+    this._toolUseTracker = new AgentToolUseTracker();
+    this._generatedItems = [];
+    this._currentTurnPersistedItemCount = 0;
+    this._maxTurns = maxTurns;
+    this._inputGuardrailResults = [];
+    this._outputGuardrailResults = [];
+    this._trace = getCurrentTrace();
+  }
+  /**
+   * The usage aggregated for this run. This includes per-request breakdowns when available.
+   */
+  get usage() {
+    return this._context.usage;
+  }
+  /**
+   * The history of the agent run. This includes the input items and the new items generated during the run.
+   *
+   * This can be used as inputs for the next agent run.
+   */
+  get history() {
+    return getTurnInput(this._originalInput, this._generatedItems);
+  }
+  /**
+   * Returns all interruptions if the current step is an interruption otherwise returns an empty array.
+   */
+  getInterruptions() {
+    if (this._currentStep?.type !== "next_step_interruption") {
+      return [];
+    }
+    return this._currentStep.data.interruptions;
+  }
+  /**
+   * Approves a tool call requested by the agent through an interruption and approval item request.
+   *
+   * To approve the request use this method and then run the agent again with the same state object
+   * to continue the execution.
+   *
+   * By default it will only approve the current tool call. To allow the tool to be used multiple
+   * times throughout the run, set the `alwaysApprove` option to `true`.
+   *
+   * @param approvalItem - The tool call approval item to approve.
+   * @param options - Options for the approval.
+   */
+  approve(approvalItem, options = { alwaysApprove: false }) {
+    this._context.approveTool(approvalItem, options);
+  }
+  /**
+   * Rejects a tool call requested by the agent through an interruption and approval item request.
+   *
+   * To reject the request use this method and then run the agent again with the same state object
+   * to continue the execution.
+   *
+   * By default it will only reject the current tool call. To allow the tool to be used multiple
+   * times throughout the run, set the `alwaysReject` option to `true`.
+   *
+   * @param approvalItem - The tool call approval item to reject.
+   * @param options - Options for the rejection.
+   */
+  reject(approvalItem, options = { alwaysReject: false }) {
+    this._context.rejectTool(approvalItem, options);
+  }
+  /**
+   * Serializes the run state to a JSON object.
+   *
+   * This method is used to serialize the run state to a JSON object that can be used to
+   * resume the run later.
+   *
+   * @returns The serialized run state.
+   */
+  toJSON() {
+    const output = {
+      $schemaVersion: CURRENT_SCHEMA_VERSION,
+      currentTurn: this._currentTurn,
+      currentAgent: {
+        name: this._currentAgent.name
+      },
+      originalInput: this._originalInput,
+      modelResponses: this._modelResponses.map((response) => {
+        return {
+          usage: {
+            requests: response.usage.requests,
+            inputTokens: response.usage.inputTokens,
+            outputTokens: response.usage.outputTokens,
+            totalTokens: response.usage.totalTokens,
+            inputTokensDetails: response.usage.inputTokensDetails,
+            outputTokensDetails: response.usage.outputTokensDetails,
+            ...response.usage.requestUsageEntries && response.usage.requestUsageEntries.length > 0 ? {
+              requestUsageEntries: response.usage.requestUsageEntries.map((entry) => ({
+                inputTokens: entry.inputTokens,
+                outputTokens: entry.outputTokens,
+                totalTokens: entry.totalTokens,
+                inputTokensDetails: entry.inputTokensDetails,
+                outputTokensDetails: entry.outputTokensDetails
+              }))
+            } : {}
+          },
+          output: response.output,
+          responseId: response.responseId,
+          providerData: response.providerData
+        };
+      }),
+      context: this._context.toJSON(),
+      toolUseTracker: this._toolUseTracker.toJSON(),
+      maxTurns: this._maxTurns,
+      currentAgentSpan: this._currentAgentSpan?.toJSON(),
+      noActiveAgentRun: this._noActiveAgentRun,
+      inputGuardrailResults: this._inputGuardrailResults,
+      outputGuardrailResults: this._outputGuardrailResults.map((r) => ({
+        ...r,
+        agent: r.agent.toJSON()
+      })),
+      currentStep: this._currentStep,
+      lastModelResponse: this._lastTurnResponse,
+      generatedItems: this._generatedItems.map((item) => item.toJSON()),
+      currentTurnPersistedItemCount: this._currentTurnPersistedItemCount,
+      lastProcessedResponse: this._lastProcessedResponse,
+      trace: this._trace ? this._trace.toJSON() : null
+    };
+    const parsed = SerializedRunState.safeParse(output);
+    if (!parsed.success) {
+      throw new SystemError(`Failed to serialize run state. ${parsed.error.message}`);
+    }
+    return parsed.data;
+  }
+  /**
+   * Serializes the run state to a string.
+   *
+   * This method is used to serialize the run state to a string that can be used to
+   * resume the run later.
+   *
+   * @returns The serialized run state.
+   */
+  toString() {
+    return JSON.stringify(this.toJSON());
+  }
+  /**
+   * Deserializes a run state from a string.
+   *
+   * This method is used to deserialize a run state from a string that was serialized using the
+   * `toString` method.
+   */
+  static async fromString(initialAgent, str) {
+    const [parsingError, jsonResult] = await safeExecute(() => JSON.parse(str));
+    if (parsingError) {
+      throw new UserError(`Failed to parse run state. ${parsingError instanceof Error ? parsingError.message : String(parsingError)}`);
+    }
+    const currentSchemaVersion = jsonResult.$schemaVersion;
+    if (!currentSchemaVersion) {
+      throw new UserError("Run state is missing schema version");
+    }
+    if (currentSchemaVersion !== CURRENT_SCHEMA_VERSION) {
+      throw new UserError(`Run state schema version ${currentSchemaVersion} is not supported. Please use version ${CURRENT_SCHEMA_VERSION}`);
+    }
+    const stateJson = SerializedRunState.parse(JSON.parse(str));
+    const agentMap = buildAgentMap(initialAgent);
+    const context = new RunContext(stateJson.context.context);
+    context._rebuildApprovals(stateJson.context.approvals);
+    const currentAgent = agentMap.get(stateJson.currentAgent.name);
+    if (!currentAgent) {
+      throw new UserError(`Agent ${stateJson.currentAgent.name} not found`);
+    }
+    const state = new _RunState(context, "", currentAgent, stateJson.maxTurns);
+    state._currentTurn = stateJson.currentTurn;
+    state._toolUseTracker = new AgentToolUseTracker();
+    for (const [agentName, toolNames] of Object.entries(stateJson.toolUseTracker)) {
+      state._toolUseTracker.addToolUse(agentMap.get(agentName), toolNames);
+    }
+    if (stateJson.currentAgentSpan) {
+      if (!stateJson.trace) {
+        logger_default.warn("Trace is not set, skipping tracing setup");
+      }
+      const trace = getGlobalTraceProvider().createTrace({
+        traceId: stateJson.trace?.id,
+        name: stateJson.trace?.workflow_name,
+        groupId: stateJson.trace?.group_id ?? void 0,
+        metadata: stateJson.trace?.metadata
+      });
+      state._currentAgentSpan = deserializeSpan(trace, stateJson.currentAgentSpan);
+      state._trace = trace;
+    }
+    state._noActiveAgentRun = stateJson.noActiveAgentRun;
+    state._inputGuardrailResults = stateJson.inputGuardrailResults;
+    state._outputGuardrailResults = stateJson.outputGuardrailResults.map((r) => ({
+      ...r,
+      agent: agentMap.get(r.agent.name)
+    }));
+    state._currentStep = stateJson.currentStep;
+    state._originalInput = stateJson.originalInput;
+    state._modelResponses = stateJson.modelResponses.map(deserializeModelResponse);
+    state._lastTurnResponse = stateJson.lastModelResponse ? deserializeModelResponse(stateJson.lastModelResponse) : void 0;
+    state._generatedItems = stateJson.generatedItems.map((item) => deserializeItem(item, agentMap));
+    state._currentTurnPersistedItemCount = stateJson.currentTurnPersistedItemCount ?? 0;
+    state._lastProcessedResponse = stateJson.lastProcessedResponse ? await deserializeProcessedResponse(agentMap, state._currentAgent, state._context, stateJson.lastProcessedResponse) : void 0;
+    if (stateJson.currentStep?.type === "next_step_handoff") {
+      state._currentStep = {
+        type: "next_step_handoff",
+        newAgent: agentMap.get(stateJson.currentStep.newAgent.name)
+      };
+    }
+    return state;
+  }
+};
+function buildAgentMap(initialAgent) {
+  const map2 = /* @__PURE__ */ new Map();
+  const queue = [initialAgent];
+  while (queue.length > 0) {
+    const currentAgent = queue.shift();
+    if (map2.has(currentAgent.name)) {
+      continue;
+    }
+    map2.set(currentAgent.name, currentAgent);
+    for (const handoff2 of currentAgent.handoffs) {
+      if (handoff2 instanceof Agent) {
+        if (!map2.has(handoff2.name)) {
+          queue.push(handoff2);
+        }
+      } else if (handoff2.agent) {
+        if (!map2.has(handoff2.agent.name)) {
+          queue.push(handoff2.agent);
+        }
+      }
+    }
+  }
+  return map2;
+}
+function deserializeSpan(trace, serializedSpan) {
+  const spanData = serializedSpan.span_data;
+  const previousSpan = serializedSpan.previous_span ? deserializeSpan(trace, serializedSpan.previous_span) : void 0;
+  const span = getGlobalTraceProvider().createSpan({
+    spanId: serializedSpan.id,
+    traceId: serializedSpan.trace_id,
+    parentId: serializedSpan.parent_id ?? void 0,
+    startedAt: serializedSpan.started_at ?? void 0,
+    endedAt: serializedSpan.ended_at ?? void 0,
+    data: spanData
+  }, trace);
+  span.previousSpan = previousSpan;
+  return span;
+}
+function deserializeModelResponse(serializedModelResponse) {
+  const usage = new Usage(serializedModelResponse.usage);
+  return {
+    usage,
+    output: serializedModelResponse.output.map((item) => OutputModelItem.parse(item)),
+    responseId: serializedModelResponse.responseId,
+    providerData: serializedModelResponse.providerData
+  };
+}
+function deserializeItem(serializedItem, agentMap) {
+  switch (serializedItem.type) {
+    case "message_output_item":
+      return new RunMessageOutputItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name));
+    case "tool_call_item":
+      return new RunToolCallItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name));
+    case "tool_call_output_item":
+      return new RunToolCallOutputItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name), serializedItem.output);
+    case "reasoning_item":
+      return new RunReasoningItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name));
+    case "handoff_call_item":
+      return new RunHandoffCallItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name));
+    case "handoff_output_item":
+      return new RunHandoffOutputItem(serializedItem.rawItem, agentMap.get(serializedItem.sourceAgent.name), agentMap.get(serializedItem.targetAgent.name));
+    case "tool_approval_item":
+      return new RunToolApprovalItem(serializedItem.rawItem, agentMap.get(serializedItem.agent.name), serializedItem.toolName);
+  }
+}
+async function deserializeProcessedResponse(agentMap, currentAgent, context, serializedProcessedResponse) {
+  const allTools = await currentAgent.getAllTools(context);
+  const tools = new Map(allTools.filter((tool2) => tool2.type === "function").map((tool2) => [tool2.name, tool2]));
+  const computerTools = new Map(allTools.filter((tool2) => tool2.type === "computer").map((tool2) => [tool2.name, tool2]));
+  const shellTools = new Map(allTools.filter((tool2) => tool2.type === "shell").map((tool2) => [tool2.name, tool2]));
+  const applyPatchTools = new Map(allTools.filter((tool2) => tool2.type === "apply_patch").map((tool2) => [tool2.name, tool2]));
+  const handoffs = new Map(currentAgent.handoffs.map((entry) => {
+    if (entry instanceof Agent) {
+      return [entry.name, handoff(entry)];
+    }
+    return [entry.toolName, entry];
+  }));
+  const result = {
+    newItems: serializedProcessedResponse.newItems.map((item) => deserializeItem(item, agentMap)),
+    toolsUsed: serializedProcessedResponse.toolsUsed,
+    handoffs: serializedProcessedResponse.handoffs.map((handoff2) => {
+      if (!handoffs.has(handoff2.handoff.toolName)) {
+        throw new UserError(`Handoff ${handoff2.handoff.toolName} not found`);
+      }
+      return {
+        toolCall: handoff2.toolCall,
+        handoff: handoffs.get(handoff2.handoff.toolName)
+      };
+    }),
+    functions: await Promise.all(serializedProcessedResponse.functions.map(async (functionCall) => {
+      if (!tools.has(functionCall.tool.name)) {
+        throw new UserError(`Tool ${functionCall.tool.name} not found`);
+      }
+      return {
+        toolCall: functionCall.toolCall,
+        tool: tools.get(functionCall.tool.name)
+      };
+    })),
+    computerActions: serializedProcessedResponse.computerActions.map((computerAction) => {
+      const toolName = computerAction.computer.name;
+      if (!computerTools.has(toolName)) {
+        throw new UserError(`Computer tool ${toolName} not found`);
+      }
+      return {
+        toolCall: computerAction.toolCall,
+        computer: computerTools.get(toolName)
+      };
+    }),
+    shellActions: (serializedProcessedResponse.shellActions ?? []).map((shellAction) => {
+      const toolName = shellAction.shell.name;
+      if (!shellTools.has(toolName)) {
+        throw new UserError(`Shell tool ${toolName} not found`);
+      }
+      return {
+        toolCall: shellAction.toolCall,
+        shell: shellTools.get(toolName)
+      };
+    }),
+    applyPatchActions: (serializedProcessedResponse.applyPatchActions ?? []).map((applyPatchAction) => {
+      const toolName = applyPatchAction.applyPatch.name;
+      if (!applyPatchTools.has(toolName)) {
+        throw new UserError(`Apply patch tool ${toolName} not found`);
+      }
+      return {
+        toolCall: applyPatchAction.toolCall,
+        applyPatch: applyPatchTools.get(toolName)
+      };
+    }),
+    mcpApprovalRequests: (serializedProcessedResponse.mcpApprovalRequests ?? []).map((approvalRequest) => ({
+      requestItem: new RunToolApprovalItem(approvalRequest.requestItem.rawItem, currentAgent),
+      mcpTool: approvalRequest.mcpTool
+    }))
+  };
+  return {
+    ...result,
+    hasToolsOrApprovalsToRun() {
+      return result.handoffs.length > 0 || result.functions.length > 0 || result.mcpApprovalRequests.length > 0 || result.computerActions.length > 0 || result.shellActions.length > 0 || result.applyPatchActions.length > 0;
+    }
+  };
+}
+
+// node_modules/@openai/agents-core/dist/run.mjs
+var _Runner_instances, getInputGuardrailDefinitions_fn, splitInputGuardrails_fn, resolveModelForAgent_fn, runIndividualNonStream_fn, runStreamLoop_fn, runIndividualStream_fn, runInputGuardrails_fn, runOutputGuardrails_fn, prepareModelCall_fn;
+var Runner = class extends RunHooks {
+  /**
+   * Creates a runner with optional defaults that apply to every subsequent run invocation.
+   *
+   * @param config - Overrides for models, guardrails, tracing, or session behavior.
+   */
+  constructor(config2 = {}) {
+    super();
+    __privateAdd(this, _Runner_instances);
+    __publicField(this, "config");
+    // --------------------------------------------------------------
+    //  Internals
+    // --------------------------------------------------------------
+    __publicField(this, "inputGuardrailDefs");
+    __publicField(this, "outputGuardrailDefs");
+    this.config = {
+      modelProvider: config2.modelProvider ?? getDefaultModelProvider(),
+      model: config2.model,
+      modelSettings: config2.modelSettings,
+      handoffInputFilter: config2.handoffInputFilter,
+      inputGuardrails: config2.inputGuardrails,
+      outputGuardrails: config2.outputGuardrails,
+      tracingDisabled: config2.tracingDisabled ?? false,
+      traceIncludeSensitiveData: config2.traceIncludeSensitiveData ?? true,
+      workflowName: config2.workflowName ?? "Agent workflow",
+      traceId: config2.traceId,
+      groupId: config2.groupId,
+      traceMetadata: config2.traceMetadata,
+      sessionInputCallback: config2.sessionInputCallback,
+      callModelInputFilter: config2.callModelInputFilter
+    };
+    this.inputGuardrailDefs = (config2.inputGuardrails ?? []).map(defineInputGuardrail);
+    this.outputGuardrailDefs = (config2.outputGuardrails ?? []).map(defineOutputGuardrail);
+  }
+  async run(agent, input, options = {
+    stream: false,
+    context: void 0
+  }) {
+    const resolvedOptions = options ?? { stream: false, context: void 0 };
+    const sessionInputCallback = resolvedOptions.sessionInputCallback ?? this.config.sessionInputCallback;
+    const callModelInputFilter = resolvedOptions.callModelInputFilter ?? this.config.callModelInputFilter;
+    const hasCallModelInputFilter = Boolean(callModelInputFilter);
+    const effectiveOptions = {
+      ...resolvedOptions,
+      sessionInputCallback,
+      callModelInputFilter
+    };
+    const serverManagesConversation = Boolean(effectiveOptions.conversationId) || Boolean(effectiveOptions.previousResponseId);
+    const session = effectiveOptions.session;
+    const resumingFromState = input instanceof RunState;
+    let sessionInputOriginalSnapshot = session && resumingFromState ? [] : void 0;
+    let sessionInputFilteredSnapshot = void 0;
+    let sessionInputPendingWriteCounts = session && resumingFromState ? /* @__PURE__ */ new Map() : void 0;
+    const recordSessionItemsForPersistence = (sourceItems, filteredItems) => {
+      const pendingWriteCounts = sessionInputPendingWriteCounts;
+      if (filteredItems !== void 0) {
+        if (!pendingWriteCounts) {
+          sessionInputFilteredSnapshot = filteredItems.map((item) => structuredClone(item));
+          return;
+        }
+        const persistableItems = [];
+        const sourceOccurrenceCounts = /* @__PURE__ */ new WeakMap();
+        for (const source of sourceItems) {
+          if (!source || typeof source !== "object") {
+            continue;
+          }
+          const nextCount = (sourceOccurrenceCounts.get(source) ?? 0) + 1;
+          sourceOccurrenceCounts.set(source, nextCount);
+        }
+        const consumeAnyPendingWriteSlot = () => {
+          for (const [key, remaining] of pendingWriteCounts) {
+            if (remaining > 0) {
+              pendingWriteCounts.set(key, remaining - 1);
+              return true;
+            }
+          }
+          return false;
+        };
+        for (let i = 0; i < filteredItems.length; i++) {
+          const filteredItem = filteredItems[i];
+          if (!filteredItem) {
+            continue;
+          }
+          let allocated = false;
+          const source = sourceItems[i];
+          if (source && typeof source === "object") {
+            const pendingOccurrences = (sourceOccurrenceCounts.get(source) ?? 0) - 1;
+            sourceOccurrenceCounts.set(source, pendingOccurrences);
+            if (pendingOccurrences > 0) {
+              continue;
+            }
+            const sourceKey = getAgentInputItemKey(source);
+            const remaining = pendingWriteCounts.get(sourceKey) ?? 0;
+            if (remaining > 0) {
+              pendingWriteCounts.set(sourceKey, remaining - 1);
+              persistableItems.push(structuredClone(filteredItem));
+              allocated = true;
+              continue;
+            }
+          }
+          const filteredKey = getAgentInputItemKey(filteredItem);
+          const filteredRemaining = pendingWriteCounts.get(filteredKey) ?? 0;
+          if (filteredRemaining > 0) {
+            pendingWriteCounts.set(filteredKey, filteredRemaining - 1);
+            persistableItems.push(structuredClone(filteredItem));
+            allocated = true;
+            continue;
+          }
+          if (!source && consumeAnyPendingWriteSlot()) {
+            persistableItems.push(structuredClone(filteredItem));
+            allocated = true;
+          }
+          if (!allocated && !source && sessionInputFilteredSnapshot === void 0) {
+            persistableItems.push(structuredClone(filteredItem));
+          }
+        }
+        if (persistableItems.length > 0 || sessionInputFilteredSnapshot === void 0) {
+          sessionInputFilteredSnapshot = persistableItems;
+        }
+        return;
+      }
+      const filtered = [];
+      if (!pendingWriteCounts) {
+        for (const item of sourceItems) {
+          if (!item) {
+            continue;
+          }
+          filtered.push(structuredClone(item));
+        }
+      } else {
+        for (const item of sourceItems) {
+          if (!item) {
+            continue;
+          }
+          const key = getAgentInputItemKey(item);
+          const remaining = pendingWriteCounts.get(key) ?? 0;
+          if (remaining <= 0) {
+            continue;
+          }
+          pendingWriteCounts.set(key, remaining - 1);
+          filtered.push(structuredClone(item));
+        }
+      }
+      if (filtered.length > 0) {
+        sessionInputFilteredSnapshot = filtered;
+      } else if (sessionInputFilteredSnapshot === void 0) {
+        sessionInputFilteredSnapshot = [];
+      }
+    };
+    const resolveSessionItemsForPersistence = () => {
+      if (sessionInputFilteredSnapshot !== void 0) {
+        return sessionInputFilteredSnapshot;
+      }
+      if (hasCallModelInputFilter) {
+        return void 0;
+      }
+      return sessionInputOriginalSnapshot;
+    };
+    let preparedInput = input;
+    if (!(preparedInput instanceof RunState)) {
+      if (session && Array.isArray(preparedInput) && !sessionInputCallback) {
+        throw new UserError("RunConfig.sessionInputCallback must be provided when using session history with list inputs.");
+      }
+      const prepared = await prepareInputItemsWithSession(preparedInput, session, sessionInputCallback, {
+        // When the server tracks conversation state we only send the new turn inputs;
+        // previous messages are recovered via conversationId/previousResponseId.
+        includeHistoryInPreparedInput: !serverManagesConversation,
+        preserveDroppedNewItems: serverManagesConversation
+      });
+      if (serverManagesConversation && session) {
+        const sessionItems = prepared.sessionItems;
+        if (sessionItems && sessionItems.length > 0) {
+          preparedInput = sessionItems;
+        } else {
+          preparedInput = prepared.preparedInput;
+        }
+      } else {
+        preparedInput = prepared.preparedInput;
+      }
+      if (session) {
+        const items = prepared.sessionItems ?? [];
+        sessionInputOriginalSnapshot = items.map((item) => structuredClone(item));
+        sessionInputPendingWriteCounts = /* @__PURE__ */ new Map();
+        for (const item of items) {
+          const key = getAgentInputItemKey(item);
+          sessionInputPendingWriteCounts.set(key, (sessionInputPendingWriteCounts.get(key) ?? 0) + 1);
+        }
+      }
+    }
+    let ensureStreamInputPersisted;
+    if (session && !serverManagesConversation) {
+      let persisted = false;
+      ensureStreamInputPersisted = async () => {
+        if (persisted) {
+          return;
+        }
+        const itemsToPersist = resolveSessionItemsForPersistence();
+        if (!itemsToPersist || itemsToPersist.length === 0) {
+          return;
+        }
+        persisted = true;
+        await saveStreamInputToSession(session, itemsToPersist);
+      };
+    }
+    const executeRun = async () => {
+      if (effectiveOptions.stream) {
+        const streamResult = await __privateMethod(this, _Runner_instances, runIndividualStream_fn).call(this, agent, preparedInput, effectiveOptions, ensureStreamInputPersisted, recordSessionItemsForPersistence);
+        return streamResult;
+      }
+      const runResult = await __privateMethod(this, _Runner_instances, runIndividualNonStream_fn).call(this, agent, preparedInput, effectiveOptions, recordSessionItemsForPersistence);
+      if (session && !serverManagesConversation) {
+        await saveToSession(session, resolveSessionItemsForPersistence(), runResult);
+      }
+      return runResult;
+    };
+    if (preparedInput instanceof RunState && preparedInput._trace) {
+      return withTrace(preparedInput._trace, async () => {
+        if (preparedInput._currentAgentSpan) {
+          setCurrentSpan(preparedInput._currentAgentSpan);
+        }
+        return executeRun();
+      });
+    }
+    return getOrCreateTrace(async () => executeRun(), {
+      traceId: this.config.traceId,
+      name: this.config.workflowName,
+      groupId: this.config.groupId,
+      metadata: this.config.traceMetadata
+    });
+  }
+};
+_Runner_instances = new WeakSet();
+getInputGuardrailDefinitions_fn = function(state) {
+  return this.inputGuardrailDefs.concat(state._currentAgent.inputGuardrails.map(defineInputGuardrail));
+};
+splitInputGuardrails_fn = function(state) {
+  const guardrails = __privateMethod(this, _Runner_instances, getInputGuardrailDefinitions_fn).call(this, state);
+  const blocking = [];
+  const parallel = [];
+  for (const guardrail of guardrails) {
+    if (guardrail.runInParallel === false) {
+      blocking.push(guardrail);
+    } else {
+      parallel.push(guardrail);
+    }
+  }
+  return { blocking, parallel };
+};
+resolveModelForAgent_fn = async function(agent) {
+  const explictlyModelSet = agent.model !== void 0 && agent.model !== Agent.DEFAULT_MODEL_PLACEHOLDER || this.config.model !== void 0 && this.config.model !== Agent.DEFAULT_MODEL_PLACEHOLDER;
+  let resolvedModel = selectModel(agent.model, this.config.model);
+  if (typeof resolvedModel === "string") {
+    resolvedModel = await this.config.modelProvider.getModel(resolvedModel);
+  }
+  return { model: resolvedModel, explictlyModelSet };
+};
+runIndividualNonStream_fn = async function(startingAgent, input, options, sessionInputUpdate) {
+  return withNewSpanContext(async () => {
+    const isResumedState = input instanceof RunState;
+    const state = isResumedState ? input : new RunState(options.context instanceof RunContext ? options.context : new RunContext(options.context), input, startingAgent, options.maxTurns ?? DEFAULT_MAX_TURNS);
+    const serverConversationTracker = options.conversationId || options.previousResponseId ? new ServerConversationTracker({
+      conversationId: options.conversationId,
+      previousResponseId: options.previousResponseId
+    }) : void 0;
+    if (serverConversationTracker && isResumedState) {
+      serverConversationTracker.primeFromState({
+        originalInput: state._originalInput,
+        generatedItems: state._generatedItems,
+        modelResponses: state._modelResponses
+      });
+    }
+    try {
+      while (true) {
+        state._currentStep = state._currentStep ?? {
+          type: "next_step_run_again"
+        };
+        if (state._currentStep.type === "next_step_interruption") {
+          logger_default.debug("Continuing from interruption");
+          if (!state._lastTurnResponse || !state._lastProcessedResponse) {
+            throw new UserError("No model response found in previous state", state);
+          }
+          const turnResult = await resolveInterruptedTurn(state._currentAgent, state._originalInput, state._generatedItems, state._lastTurnResponse, state._lastProcessedResponse, this, state);
+          state._toolUseTracker.addToolUse(state._currentAgent, state._lastProcessedResponse.toolsUsed);
+          state._originalInput = turnResult.originalInput;
+          state._generatedItems = turnResult.generatedItems;
+          if (turnResult.nextStep.type === "next_step_run_again") {
+            state._currentTurnPersistedItemCount = 0;
+          }
+          state._currentStep = turnResult.nextStep;
+          if (turnResult.nextStep.type === "next_step_interruption") {
+            return new RunResult(state);
+          }
+          continue;
+        }
+        if (state._currentStep.type === "next_step_run_again") {
+          const artifacts = await prepareAgentArtifacts(state);
+          state._currentTurn++;
+          state._currentTurnPersistedItemCount = 0;
+          if (state._currentTurn > state._maxTurns) {
+            state._currentAgentSpan?.setError({
+              message: "Max turns exceeded",
+              data: { max_turns: state._maxTurns }
+            });
+            throw new MaxTurnsExceededError(`Max turns (${state._maxTurns}) exceeded`, state);
+          }
+          logger_default.debug(`Running agent ${state._currentAgent.name} (turn ${state._currentTurn})`);
+          let parallelGuardrailPromise;
+          if (state._currentTurn === 1) {
+            const guardrails = __privateMethod(this, _Runner_instances, splitInputGuardrails_fn).call(this, state);
+            if (guardrails.blocking.length > 0) {
+              await __privateMethod(this, _Runner_instances, runInputGuardrails_fn).call(this, state, guardrails.blocking);
+            }
+            if (guardrails.parallel.length > 0) {
+              parallelGuardrailPromise = __privateMethod(this, _Runner_instances, runInputGuardrails_fn).call(this, state, guardrails.parallel);
+              parallelGuardrailPromise.catch(() => {
+              });
+            }
+          }
+          const turnInput = serverConversationTracker ? serverConversationTracker.prepareInput(state._originalInput, state._generatedItems) : getTurnInput(state._originalInput, state._generatedItems);
+          if (state._noActiveAgentRun) {
+            state._currentAgent.emit("agent_start", state._context, state._currentAgent);
+            this.emit("agent_start", state._context, state._currentAgent);
+          }
+          const preparedCall = await __privateMethod(this, _Runner_instances, prepareModelCall_fn).call(this, state, options, artifacts, turnInput, serverConversationTracker, sessionInputUpdate);
+          state._lastTurnResponse = await preparedCall.model.getResponse({
+            systemInstructions: preparedCall.modelInput.instructions,
+            prompt: preparedCall.prompt,
+            // Explicit agent/run config models should take precedence over prompt defaults.
+            ...preparedCall.explictlyModelSet ? { overridePromptModel: true } : {},
+            input: preparedCall.modelInput.input,
+            previousResponseId: preparedCall.previousResponseId,
+            conversationId: preparedCall.conversationId,
+            modelSettings: preparedCall.modelSettings,
+            tools: preparedCall.serializedTools,
+            toolsExplicitlyProvided: preparedCall.toolsExplicitlyProvided,
+            outputType: convertAgentOutputTypeToSerializable(state._currentAgent.outputType),
+            handoffs: preparedCall.serializedHandoffs,
+            tracing: getTracing(this.config.tracingDisabled, this.config.traceIncludeSensitiveData),
+            signal: options.signal
+          });
+          state._modelResponses.push(state._lastTurnResponse);
+          state._context.usage.add(state._lastTurnResponse.usage);
+          state._noActiveAgentRun = false;
+          serverConversationTracker?.trackServerItems(state._lastTurnResponse);
+          const processedResponse = processModelResponse(state._lastTurnResponse, state._currentAgent, preparedCall.tools, preparedCall.handoffs);
+          state._lastProcessedResponse = processedResponse;
+          const turnResult = await resolveTurnAfterModelResponse(state._currentAgent, state._originalInput, state._generatedItems, state._lastTurnResponse, state._lastProcessedResponse, this, state);
+          state._toolUseTracker.addToolUse(state._currentAgent, state._lastProcessedResponse.toolsUsed);
+          state._originalInput = turnResult.originalInput;
+          state._generatedItems = turnResult.generatedItems;
+          if (turnResult.nextStep.type === "next_step_run_again") {
+            state._currentTurnPersistedItemCount = 0;
+          }
+          state._currentStep = turnResult.nextStep;
+          if (parallelGuardrailPromise) {
+            await parallelGuardrailPromise;
+          }
+        }
+        if (state._currentStep && state._currentStep.type === "next_step_final_output") {
+          await __privateMethod(this, _Runner_instances, runOutputGuardrails_fn).call(this, state, state._currentStep.output);
+          this.emit("agent_end", state._context, state._currentAgent, state._currentStep.output);
+          state._currentAgent.emit("agent_end", state._context, state._currentStep.output);
+          return new RunResult(state);
+        } else if (state._currentStep && state._currentStep.type === "next_step_handoff") {
+          state._currentAgent = state._currentStep.newAgent;
+          if (state._currentAgentSpan) {
+            state._currentAgentSpan.end();
+            resetCurrentSpan();
+            state._currentAgentSpan = void 0;
+          }
+          state._noActiveAgentRun = true;
+          state._currentStep = { type: "next_step_run_again" };
+        } else if (state._currentStep && state._currentStep.type === "next_step_interruption") {
+          return new RunResult(state);
+        } else {
+          logger_default.debug("Running next loop");
+        }
+      }
+    } catch (err) {
+      if (state._currentAgentSpan) {
+        state._currentAgentSpan.setError({
+          message: "Error in agent run",
+          data: { error: String(err) }
+        });
+      }
+      throw err;
+    } finally {
+      if (state._currentAgentSpan) {
+        if (state._currentStep?.type !== "next_step_interruption") {
+          state._currentAgentSpan.end();
+        }
+        resetCurrentSpan();
+      }
+    }
+  });
+};
+runStreamLoop_fn = async function(result, options, isResumedState, ensureStreamInputPersisted, sessionInputUpdate) {
+  const serverManagesConversation = Boolean(options.conversationId) || Boolean(options.previousResponseId);
+  const serverConversationTracker = serverManagesConversation ? new ServerConversationTracker({
+    conversationId: options.conversationId,
+    previousResponseId: options.previousResponseId
+  }) : void 0;
+  let handedInputToModel = false;
+  let streamInputPersisted = false;
+  const persistStreamInputIfNeeded = async () => {
+    if (streamInputPersisted || !ensureStreamInputPersisted) {
+      return;
+    }
+    await ensureStreamInputPersisted();
+    streamInputPersisted = true;
+  };
+  if (serverConversationTracker && isResumedState) {
+    serverConversationTracker.primeFromState({
+      originalInput: result.state._originalInput,
+      generatedItems: result.state._generatedItems,
+      modelResponses: result.state._modelResponses
+    });
+  }
+  try {
+    while (true) {
+      const currentAgent = result.state._currentAgent;
+      result.state._currentStep = result.state._currentStep ?? {
+        type: "next_step_run_again"
+      };
+      if (result.state._currentStep.type === "next_step_interruption") {
+        logger_default.debug("Continuing from interruption");
+        if (!result.state._lastTurnResponse || !result.state._lastProcessedResponse) {
+          throw new UserError("No model response found in previous state", result.state);
+        }
+        const turnResult = await resolveInterruptedTurn(result.state._currentAgent, result.state._originalInput, result.state._generatedItems, result.state._lastTurnResponse, result.state._lastProcessedResponse, this, result.state);
+        addStepToRunResult(result, turnResult);
+        result.state._toolUseTracker.addToolUse(result.state._currentAgent, result.state._lastProcessedResponse.toolsUsed);
+        result.state._originalInput = turnResult.originalInput;
+        result.state._generatedItems = turnResult.generatedItems;
+        if (turnResult.nextStep.type === "next_step_run_again") {
+          result.state._currentTurnPersistedItemCount = 0;
+        }
+        result.state._currentStep = turnResult.nextStep;
+        if (turnResult.nextStep.type === "next_step_interruption") {
+          return;
+        }
+        continue;
+      }
+      if (result.state._currentStep.type === "next_step_run_again") {
+        const artifacts = await prepareAgentArtifacts(result.state);
+        result.state._currentTurn++;
+        result.state._currentTurnPersistedItemCount = 0;
+        if (result.state._currentTurn > result.state._maxTurns) {
+          result.state._currentAgentSpan?.setError({
+            message: "Max turns exceeded",
+            data: { max_turns: result.state._maxTurns }
+          });
+          throw new MaxTurnsExceededError(`Max turns (${result.state._maxTurns}) exceeded`, result.state);
+        }
+        logger_default.debug(`Running agent ${currentAgent.name} (turn ${result.state._currentTurn})`);
+        let guardrailError;
+        let parallelGuardrailPromise;
+        if (result.state._currentTurn === 1) {
+          const guardrails = __privateMethod(this, _Runner_instances, splitInputGuardrails_fn).call(this, result.state);
+          if (guardrails.blocking.length > 0) {
+            await __privateMethod(this, _Runner_instances, runInputGuardrails_fn).call(this, result.state, guardrails.blocking);
+          }
+          if (guardrails.parallel.length > 0) {
+            const promise2 = __privateMethod(this, _Runner_instances, runInputGuardrails_fn).call(this, result.state, guardrails.parallel);
+            parallelGuardrailPromise = promise2.catch((err) => {
+              guardrailError = err;
+              return [];
+            });
+          }
+        }
+        const turnInput = serverConversationTracker ? serverConversationTracker.prepareInput(result.input, result.newItems) : getTurnInput(result.input, result.newItems);
+        if (result.state._noActiveAgentRun) {
+          currentAgent.emit("agent_start", result.state._context, currentAgent);
+          this.emit("agent_start", result.state._context, currentAgent);
+        }
+        let finalResponse = void 0;
+        const preparedCall = await __privateMethod(this, _Runner_instances, prepareModelCall_fn).call(this, result.state, options, artifacts, turnInput, serverConversationTracker, sessionInputUpdate);
+        if (guardrailError) {
+          throw guardrailError;
+        }
+        handedInputToModel = true;
+        await persistStreamInputIfNeeded();
+        for await (const event of preparedCall.model.getStreamedResponse({
+          systemInstructions: preparedCall.modelInput.instructions,
+          prompt: preparedCall.prompt,
+          // Streaming requests should also honor explicitly chosen models.
+          ...preparedCall.explictlyModelSet ? { overridePromptModel: true } : {},
+          input: preparedCall.modelInput.input,
+          previousResponseId: preparedCall.previousResponseId,
+          conversationId: preparedCall.conversationId,
+          modelSettings: preparedCall.modelSettings,
+          tools: preparedCall.serializedTools,
+          toolsExplicitlyProvided: preparedCall.toolsExplicitlyProvided,
+          handoffs: preparedCall.serializedHandoffs,
+          outputType: convertAgentOutputTypeToSerializable(currentAgent.outputType),
+          tracing: getTracing(this.config.tracingDisabled, this.config.traceIncludeSensitiveData),
+          signal: options.signal
+        })) {
+          if (guardrailError) {
+            throw guardrailError;
+          }
+          if (event.type === "response_done") {
+            const parsed = StreamEventResponseCompleted.parse(event);
+            finalResponse = {
+              usage: new Usage(parsed.response.usage),
+              output: parsed.response.output,
+              responseId: parsed.response.id
+            };
+          }
+          if (result.cancelled) {
+            return;
+          }
+          result._addItem(new RunRawModelStreamEvent(event));
+        }
+        if (parallelGuardrailPromise) {
+          await parallelGuardrailPromise;
+          if (guardrailError) {
+            throw guardrailError;
+          }
+        }
+        result.state._noActiveAgentRun = false;
+        if (!finalResponse) {
+          throw new ModelBehaviorError("Model did not produce a final response!", result.state);
+        }
+        result.state._lastTurnResponse = finalResponse;
+        serverConversationTracker?.trackServerItems(finalResponse);
+        result.state._modelResponses.push(result.state._lastTurnResponse);
+        const processedResponse = processModelResponse(result.state._lastTurnResponse, currentAgent, preparedCall.tools, preparedCall.handoffs);
+        result.state._lastProcessedResponse = processedResponse;
+        const preToolItems = new Set(processedResponse.newItems);
+        if (preToolItems.size > 0) {
+          streamStepItemsToRunResult(result, processedResponse.newItems);
+        }
+        const turnResult = await resolveTurnAfterModelResponse(currentAgent, result.state._originalInput, result.state._generatedItems, result.state._lastTurnResponse, result.state._lastProcessedResponse, this, result.state);
+        addStepToRunResult(result, turnResult, {
+          skipItems: preToolItems
+        });
+        result.state._toolUseTracker.addToolUse(currentAgent, processedResponse.toolsUsed);
+        result.state._originalInput = turnResult.originalInput;
+        result.state._generatedItems = turnResult.generatedItems;
+        if (turnResult.nextStep.type === "next_step_run_again") {
+          result.state._currentTurnPersistedItemCount = 0;
+        }
+        result.state._currentStep = turnResult.nextStep;
+      }
+      if (result.state._currentStep.type === "next_step_final_output") {
+        await __privateMethod(this, _Runner_instances, runOutputGuardrails_fn).call(this, result.state, result.state._currentStep.output);
+        await persistStreamInputIfNeeded();
+        if (!serverManagesConversation) {
+          await saveStreamResultToSession(options.session, result);
+        }
+        this.emit("agent_end", result.state._context, currentAgent, result.state._currentStep.output);
+        currentAgent.emit("agent_end", result.state._context, result.state._currentStep.output);
+        return;
+      } else if (result.state._currentStep.type === "next_step_interruption") {
+        await persistStreamInputIfNeeded();
+        if (!serverManagesConversation) {
+          await saveStreamResultToSession(options.session, result);
+        }
+        return;
+      } else if (result.state._currentStep.type === "next_step_handoff") {
+        result.state._currentAgent = result.state._currentStep?.newAgent;
+        if (result.state._currentAgentSpan) {
+          result.state._currentAgentSpan.end();
+          resetCurrentSpan();
+        }
+        result.state._currentAgentSpan = void 0;
+        result._addItem(new RunAgentUpdatedStreamEvent(result.state._currentAgent));
+        result.state._noActiveAgentRun = true;
+        result.state._currentStep = {
+          type: "next_step_run_again"
+        };
+      } else {
+        logger_default.debug("Running next loop");
+      }
+    }
+  } catch (error46) {
+    if (handedInputToModel && !streamInputPersisted) {
+      await persistStreamInputIfNeeded();
+    }
+    if (result.state._currentAgentSpan) {
+      result.state._currentAgentSpan.setError({
+        message: "Error in agent run",
+        data: { error: String(error46) }
+      });
+    }
+    throw error46;
+  } finally {
+    if (result.state._currentAgentSpan) {
+      if (result.state._currentStep?.type !== "next_step_interruption") {
+        result.state._currentAgentSpan.end();
+      }
+      resetCurrentSpan();
+    }
+  }
+};
+runIndividualStream_fn = async function(agent, input, options, ensureStreamInputPersisted, sessionInputUpdate) {
+  options = options ?? {};
+  return withNewSpanContext(async () => {
+    const isResumedState = input instanceof RunState;
+    const state = isResumedState ? input : new RunState(options.context instanceof RunContext ? options.context : new RunContext(options.context), input, agent, options.maxTurns ?? DEFAULT_MAX_TURNS);
+    const result = new StreamedRunResult({
+      signal: options.signal,
+      state
+    });
+    result.maxTurns = options.maxTurns ?? state._maxTurns;
+    const streamLoopPromise = __privateMethod(this, _Runner_instances, runStreamLoop_fn).call(this, result, options, isResumedState, ensureStreamInputPersisted, sessionInputUpdate).then(() => {
+      result._done();
+    }, (err) => {
+      result._raiseError(err);
+    });
+    result._setStreamLoopPromise(streamLoopPromise);
+    return result;
+  });
+};
+runInputGuardrails_fn = async function(state, guardrailsOverride) {
+  const guardrails = guardrailsOverride ?? __privateMethod(this, _Runner_instances, getInputGuardrailDefinitions_fn).call(this, state);
+  if (guardrails.length > 0) {
+    const guardrailArgs = {
+      agent: state._currentAgent,
+      input: state._originalInput,
+      context: state._context
+    };
+    try {
+      const results = await Promise.all(guardrails.map(async (guardrail) => {
+        return withGuardrailSpan(async (span) => {
+          const result = await guardrail.run(guardrailArgs);
+          span.spanData.triggered = result.output.tripwireTriggered;
+          return result;
+        }, { data: { name: guardrail.name } }, state._currentAgentSpan);
+      }));
+      state._inputGuardrailResults.push(...results);
+      for (const result of results) {
+        if (result.output.tripwireTriggered) {
+          if (state._currentAgentSpan) {
+            state._currentAgentSpan.setError({
+              message: "Guardrail tripwire triggered",
+              data: { guardrail: result.guardrail.name }
+            });
+          }
+          throw new InputGuardrailTripwireTriggered(`Input guardrail triggered: ${JSON.stringify(result.output.outputInfo)}`, result, state);
+        }
+      }
+      return results;
+    } catch (e) {
+      if (e instanceof InputGuardrailTripwireTriggered) {
+        throw e;
+      }
+      state._currentTurn--;
+      throw new GuardrailExecutionError(`Input guardrail failed to complete: ${e}`, e, state);
+    }
+  }
+  return [];
+};
+runOutputGuardrails_fn = async function(state, output) {
+  const guardrails = this.outputGuardrailDefs.concat(state._currentAgent.outputGuardrails.map(defineOutputGuardrail));
+  if (guardrails.length > 0) {
+    const agentOutput = state._currentAgent.processFinalOutput(output);
+    const runOutput = getTurnInput([], state._generatedItems);
+    const guardrailArgs = {
+      agent: state._currentAgent,
+      agentOutput,
+      context: state._context,
+      details: {
+        modelResponse: state._lastTurnResponse,
+        output: runOutput
+      }
+    };
+    try {
+      const results = await Promise.all(guardrails.map(async (guardrail) => {
+        return withGuardrailSpan(async (span) => {
+          const result = await guardrail.run(guardrailArgs);
+          span.spanData.triggered = result.output.tripwireTriggered;
+          return result;
+        }, { data: { name: guardrail.name } }, state._currentAgentSpan);
+      }));
+      for (const result of results) {
+        if (result.output.tripwireTriggered) {
+          if (state._currentAgentSpan) {
+            state._currentAgentSpan.setError({
+              message: "Guardrail tripwire triggered",
+              data: { guardrail: result.guardrail.name }
+            });
+          }
+          throw new OutputGuardrailTripwireTriggered(`Output guardrail triggered: ${JSON.stringify(result.output.outputInfo)}`, result, state);
+        }
+      }
+    } catch (e) {
+      if (e instanceof OutputGuardrailTripwireTriggered) {
+        throw e;
+      }
+      throw new GuardrailExecutionError(`Output guardrail failed to complete: ${e}`, e, state);
+    }
+  }
+};
+prepareModelCall_fn = async function(state, options, artifacts, turnInput, serverConversationTracker, sessionInputUpdate) {
+  const { model, explictlyModelSet } = await __privateMethod(this, _Runner_instances, resolveModelForAgent_fn).call(this, state._currentAgent);
+  let modelSettings = {
+    ...this.config.modelSettings,
+    ...state._currentAgent.modelSettings
+  };
+  modelSettings = adjustModelSettingsForNonGPT5RunnerModel(explictlyModelSet, state._currentAgent.modelSettings, model, modelSettings);
+  modelSettings = maybeResetToolChoice(state._currentAgent, state._toolUseTracker, modelSettings);
+  const systemInstructions = await state._currentAgent.getSystemPrompt(state._context);
+  const prompt = await state._currentAgent.getPrompt(state._context);
+  const { modelInput, sourceItems, persistedItems, filterApplied } = await applyCallModelInputFilter(state._currentAgent, options.callModelInputFilter, state._context, turnInput, systemInstructions);
+  serverConversationTracker?.markInputAsSent(sourceItems);
+  sessionInputUpdate?.(sourceItems, filterApplied ? persistedItems : void 0);
+  const previousResponseId = serverConversationTracker?.previousResponseId ?? options.previousResponseId;
+  const conversationId = serverConversationTracker?.conversationId ?? options.conversationId;
+  return {
+    ...artifacts,
+    model,
+    explictlyModelSet,
+    modelSettings,
+    modelInput,
+    prompt,
+    previousResponseId,
+    conversationId
+  };
+};
+function getTurnInput(originalInput, generatedItems) {
+  const rawItems = generatedItems.filter((item) => item.type !== "tool_approval_item").map((item) => item.rawItem);
+  return [...toAgentInputList(originalInput), ...rawItems];
+}
+var DEFAULT_MAX_TURNS = 10;
+function selectModel(agentModel, runConfigModel) {
+  if (typeof agentModel === "string" && agentModel !== Agent.DEFAULT_MODEL_PLACEHOLDER || agentModel) {
+    return agentModel;
+  }
+  return runConfigModel ?? agentModel ?? Agent.DEFAULT_MODEL_PLACEHOLDER;
+}
+function getTracing(tracingDisabled, traceIncludeSensitiveData) {
+  if (tracingDisabled) {
+    return false;
+  }
+  if (traceIncludeSensitiveData) {
+    return true;
+  }
+  return "enabled_without_data";
+}
+async function applyCallModelInputFilter(agent, callModelInputFilter, context, inputItems, systemInstructions) {
+  const cloneInputItems = (items, map2) => items.map((item) => {
+    const cloned = structuredClone(item);
+    if (map2 && cloned && typeof cloned === "object") {
+      map2.set(cloned, item);
+    }
+    return cloned;
+  });
+  const cloneMap = /* @__PURE__ */ new WeakMap();
+  const originalPool = buildAgentInputPool(inputItems);
+  const fallbackOriginals = [];
+  for (const item of inputItems) {
+    if (item && typeof item === "object") {
+      fallbackOriginals.push(item);
+    }
+  }
+  const removeFromFallback = (candidate) => {
+    if (!candidate || typeof candidate !== "object") {
+      return;
+    }
+    const index = fallbackOriginals.findIndex((original) => original === candidate);
+    if (index !== -1) {
+      fallbackOriginals.splice(index, 1);
+    }
+  };
+  const takeFallbackOriginal = () => {
+    const next = fallbackOriginals.shift();
+    if (next) {
+      removeAgentInputFromPool(originalPool, next);
+    }
+    return next;
+  };
+  const clonedBaseInput = cloneInputItems(inputItems, cloneMap);
+  const base = {
+    input: clonedBaseInput,
+    instructions: systemInstructions
+  };
+  if (!callModelInputFilter) {
+    return {
+      modelInput: base,
+      sourceItems: [...inputItems],
+      persistedItems: [],
+      filterApplied: false
+    };
+  }
+  try {
+    const result = await callModelInputFilter({
+      modelData: base,
+      agent,
+      context: context.context
+    });
+    if (!result || !Array.isArray(result.input)) {
+      throw new UserError("callModelInputFilter must return a ModelInputData object with an input array.");
+    }
+    const sourceItems = result.input.map((item) => {
+      if (!item || typeof item !== "object") {
+        return void 0;
+      }
+      const original = cloneMap.get(item);
+      if (original) {
+        removeFromFallback(original);
+        removeAgentInputFromPool(originalPool, original);
+        return original;
+      }
+      const key = getAgentInputItemKey(item);
+      const matchedByContent = takeAgentInputFromPool(originalPool, key);
+      if (matchedByContent) {
+        removeFromFallback(matchedByContent);
+        return matchedByContent;
+      }
+      const fallback = takeFallbackOriginal();
+      if (fallback) {
+        return fallback;
+      }
+      return void 0;
+    });
+    const clonedFilteredInput = cloneInputItems(result.input);
+    return {
+      modelInput: {
+        input: clonedFilteredInput,
+        instructions: typeof result.instructions === "undefined" ? systemInstructions : result.instructions
+      },
+      sourceItems,
+      persistedItems: clonedFilteredInput.map((item) => structuredClone(item)),
+      filterApplied: true
+    };
+  } catch (error46) {
+    addErrorToCurrentSpan({
+      message: "Error in callModelInputFilter",
+      data: { error: String(error46) }
+    });
+    throw error46;
+  }
+}
+var ServerConversationTracker = class {
+  constructor({ conversationId, previousResponseId }) {
+    // Conversation ID:
+    // - https://platform.openai.com/docs/guides/conversation-state?api-mode=responses#using-the-conversations-api
+    // - https://platform.openai.com/docs/api-reference/conversations/create
+    __publicField(this, "conversationId");
+    // Previous Response ID:
+    // https://platform.openai.com/docs/guides/conversation-state?api-mode=responses#passing-context-from-the-previous-response
+    __publicField(this, "previousResponseId");
+    // Using this flag because WeakSet does not provide a way to check its size
+    __publicField(this, "sentInitialInput", false);
+    // The items already sent to the model; using WeakSet for memory efficiency
+    __publicField(this, "sentItems", /* @__PURE__ */ new WeakSet());
+    // The items received from the server; using WeakSet for memory efficiency
+    __publicField(this, "serverItems", /* @__PURE__ */ new WeakSet());
+    // Track initial input items that have not yet been sent so they can be retried on later turns.
+    __publicField(this, "remainingInitialInput", null);
+    this.conversationId = conversationId ?? void 0;
+    this.previousResponseId = previousResponseId ?? void 0;
+  }
+  /**
+   * Pre-populates tracker caches from an existing RunState when resuming server-managed runs.
+   */
+  primeFromState({ originalInput, generatedItems, modelResponses }) {
+    if (this.sentInitialInput) {
+      return;
+    }
+    for (const item of toAgentInputList(originalInput)) {
+      if (item && typeof item === "object") {
+        this.sentItems.add(item);
+      }
+    }
+    this.sentInitialInput = true;
+    this.remainingInitialInput = null;
+    const latestResponse = modelResponses[modelResponses.length - 1];
+    for (const response of modelResponses) {
+      for (const item of response.output) {
+        if (item && typeof item === "object") {
+          this.serverItems.add(item);
+        }
+      }
+    }
+    if (!this.conversationId && latestResponse?.responseId) {
+      this.previousResponseId = latestResponse.responseId;
+    }
+    for (const item of generatedItems) {
+      const rawItem = item.rawItem;
+      if (!rawItem || typeof rawItem !== "object") {
+        continue;
+      }
+      if (this.serverItems.has(rawItem)) {
+        this.sentItems.add(rawItem);
+      }
+    }
+  }
+  /**
+   * Records the raw items returned by the server so future delta calculations skip them.
+   * Also captures the latest response identifier to chain follow-up calls when possible.
+   */
+  trackServerItems(modelResponse) {
+    if (!modelResponse) {
+      return;
+    }
+    for (const item of modelResponse.output) {
+      if (item && typeof item === "object") {
+        this.serverItems.add(item);
+      }
+    }
+    if (!this.conversationId && modelResponse.responseId) {
+      this.previousResponseId = modelResponse.responseId;
+    }
+  }
+  /**
+   * Returns the minimum set of items that still need to be delivered to the server for the
+   * current turn. This includes the original turn inputs (until acknowledged) plus any
+   * newly generated items that have not yet been echoed back by the API.
+   */
+  prepareInput(originalInput, generatedItems) {
+    const inputItems = [];
+    if (!this.sentInitialInput) {
+      const initialItems = toAgentInputList(originalInput);
+      inputItems.push(...initialItems);
+      this.remainingInitialInput = initialItems.filter((item) => Boolean(item) && typeof item === "object");
+      this.sentInitialInput = true;
+    } else if (this.remainingInitialInput && this.remainingInitialInput.length > 0) {
+      inputItems.push(...this.remainingInitialInput);
+    }
+    for (const item of generatedItems) {
+      if (item.type === "tool_approval_item") {
+        continue;
+      }
+      const rawItem = item.rawItem;
+      if (!rawItem || typeof rawItem !== "object") {
+        continue;
+      }
+      if (this.sentItems.has(rawItem) || this.serverItems.has(rawItem)) {
+        continue;
+      }
+      inputItems.push(rawItem);
+    }
+    return inputItems;
+  }
+  /**
+   * Marks the provided originals as delivered so future turns do not resend them and any
+   * pending initial inputs can be dropped once the server acknowledges receipt.
+   */
+  markInputAsSent(items) {
+    if (!items.length) {
+      return;
+    }
+    const delivered = /* @__PURE__ */ new Set();
+    for (const item of items) {
+      if (!item || typeof item !== "object" || delivered.has(item)) {
+        continue;
+      }
+      delivered.add(item);
+      this.sentItems.add(item);
+    }
+    if (!this.remainingInitialInput || this.remainingInitialInput.length === 0) {
+      return;
+    }
+    this.remainingInitialInput = this.remainingInitialInput.filter((item) => !delivered.has(item));
+    if (this.remainingInitialInput.length === 0) {
+      this.remainingInitialInput = null;
+    }
+  }
+};
+function adjustModelSettingsForNonGPT5RunnerModel(explictlyModelSet, agentModelSettings, runnerModel, modelSettings) {
+  if (
+    // gpt-5 is enabled for the default model for agents
+    isGpt5Default() && // explicitly set model for the agent
+    explictlyModelSet && // this runner uses a non-gpt-5 model
+    (typeof runnerModel !== "string" || !gpt5ReasoningSettingsRequired(runnerModel)) && (agentModelSettings.providerData?.reasoning || agentModelSettings.providerData?.text?.verbosity || agentModelSettings.providerData?.reasoning_effort)
+  ) {
+    const copiedModelSettings = { ...modelSettings };
+    delete copiedModelSettings.providerData?.reasoning;
+    delete copiedModelSettings.providerData?.text?.verbosity;
+    delete copiedModelSettings.providerData?.reasoning_effort;
+    if (copiedModelSettings.reasoning) {
+      delete copiedModelSettings.reasoning.effort;
+      delete copiedModelSettings.reasoning.summary;
+    }
+    if (copiedModelSettings.text) {
+      delete copiedModelSettings.text.verbosity;
+    }
+    return copiedModelSettings;
+  }
+  return modelSettings;
+}
+async function prepareAgentArtifacts(state) {
+  const handoffs = await state._currentAgent.getEnabledHandoffs(state._context);
+  const tools = await state._currentAgent.getAllTools(state._context);
+  if (!state._currentAgentSpan) {
+    const handoffNames = handoffs.map((h) => h.agentName);
+    state._currentAgentSpan = createAgentSpan({
+      data: {
+        name: state._currentAgent.name,
+        handoffs: handoffNames,
+        tools: tools.map((t) => t.name),
+        output_type: state._currentAgent.outputSchemaName
+      }
+    });
+    state._currentAgentSpan.start();
+    setCurrentSpan(state._currentAgentSpan);
+  } else {
+    state._currentAgentSpan.spanData.tools = tools.map((t) => t.name);
+  }
+  return {
+    handoffs,
+    tools,
+    serializedHandoffs: handoffs.map((handoff2) => serializeHandoff(handoff2)),
+    serializedTools: tools.map((tool2) => serializeTool(tool2)),
+    toolsExplicitlyProvided: state._currentAgent.hasExplicitToolConfig()
+  };
+}
+function getAgentInputItemKey(item) {
+  return JSON.stringify(item, agentInputSerializationReplacer);
+}
+function buildAgentInputPool(items) {
+  const pool = /* @__PURE__ */ new Map();
+  for (const item of items) {
+    const key = getAgentInputItemKey(item);
+    const existing = pool.get(key);
+    if (existing) {
+      existing.push(item);
+    } else {
+      pool.set(key, [item]);
+    }
+  }
+  return pool;
+}
+function takeAgentInputFromPool(pool, key) {
+  const candidates = pool.get(key);
+  if (!candidates || candidates.length === 0) {
+    return void 0;
+  }
+  const [first] = candidates;
+  candidates.shift();
+  if (candidates.length === 0) {
+    pool.delete(key);
+  }
+  return first;
+}
+function removeAgentInputFromPool(pool, item) {
+  const key = getAgentInputItemKey(item);
+  const candidates = pool.get(key);
+  if (!candidates || candidates.length === 0) {
+    return;
+  }
+  const index = candidates.findIndex((candidate) => candidate === item);
+  if (index === -1) {
+    return;
+  }
+  candidates.splice(index, 1);
+  if (candidates.length === 0) {
+    pool.delete(key);
+  }
+}
+function agentInputSerializationReplacer(_key, value) {
+  if (value instanceof ArrayBuffer) {
+    return {
+      __type: "ArrayBuffer",
+      data: encodeUint8ArrayToBase64(new Uint8Array(value))
+    };
+  }
+  if (isArrayBufferView(value)) {
+    const view = value;
+    return {
+      __type: view.constructor.name,
+      data: encodeUint8ArrayToBase64(new Uint8Array(view.buffer, view.byteOffset, view.byteLength))
+    };
+  }
+  if (isNodeBuffer(value)) {
+    const view = value;
+    return {
+      __type: "Buffer",
+      data: encodeUint8ArrayToBase64(new Uint8Array(view.buffer, view.byteOffset, view.byteLength))
+    };
+  }
+  if (isSerializedBufferSnapshot(value)) {
+    return {
+      __type: "Buffer",
+      data: encodeUint8ArrayToBase64(Uint8Array.from(value.data))
+    };
+  }
+  return value;
+}
+function toAgentInputList(originalInput) {
+  if (typeof originalInput === "string") {
+    return [{ type: "message", role: "user", content: originalInput }];
+  }
+  return [...originalInput];
+}
+
+// node_modules/@openai/agents-core/dist/result.mjs
+var RunResultBase = class {
+  constructor(state) {
+    __publicField(this, "state");
+    this.state = state;
+  }
+  /**
+   * The history of the agent run. This includes the input items and the new items generated during
+   * the agent run.
+   *
+   * This can be used as inputs for the next agent run.
+   */
+  get history() {
+    return getTurnInput(this.input, this.newItems);
+  }
+  /**
+   * The new items generated during the agent run. These include things like new messages, tool
+   * calls and their outputs, etc.
+   *
+   * It does not include information about the agents and instead represents the model data.
+   *
+   * For the output including the agents, use the `newItems` property.
+   */
+  get output() {
+    return getTurnInput([], this.newItems);
+  }
+  /**
+   * A copy of the original input items.
+   */
+  get input() {
+    return this.state._originalInput;
+  }
+  /**
+   * The run items generated during the agent run. This associates the model data with the agents.
+   *
+   * For the model data that can be used as inputs for the next agent run, use the `output` property.
+   */
+  get newItems() {
+    return this.state._generatedItems;
+  }
+  /**
+   * The raw LLM responses generated by the model during the agent run.
+   */
+  get rawResponses() {
+    return this.state._modelResponses;
+  }
+  /**
+   * The last response ID generated by the model during the agent run.
+   */
+  get lastResponseId() {
+    const responses = this.rawResponses;
+    return responses && responses.length > 0 ? responses[responses.length - 1].responseId : void 0;
+  }
+  /**
+   * The last agent that was run
+   */
+  get lastAgent() {
+    return this.state._currentAgent;
+  }
+  /**
+   * Guardrail results for the input messages.
+   */
+  get inputGuardrailResults() {
+    return this.state._inputGuardrailResults;
+  }
+  /**
+   * Guardrail results for the final output of the agent.
+   */
+  get outputGuardrailResults() {
+    return this.state._outputGuardrailResults;
+  }
+  /**
+   * Any interruptions that occurred during the agent run for example for tool approvals.
+   */
+  get interruptions() {
+    if (this.state._currentStep?.type === "next_step_interruption") {
+      return this.state._currentStep.data.interruptions;
+    }
+    return [];
+  }
+  /**
+   * The final output of the agent. If the output type was set to anything other than `text`,
+   * this will be parsed either as JSON or using the Zod schema you provided.
+   */
+  get finalOutput() {
+    if (this.state._currentStep?.type === "next_step_final_output") {
+      return this.state._currentAgent.processFinalOutput(this.state._currentStep.output);
+    }
+    logger_default.warn("Accessed finalOutput before agent run is completed.");
+    return void 0;
+  }
+};
+var RunResult = class extends RunResultBase {
+  constructor(state) {
+    super(state);
+  }
+};
+var _error, _signal, _readableController, _readableStream, _completedPromise, _completedPromiseResolve, _completedPromiseReject, _cancelled, _streamLoopPromise;
+var StreamedRunResult = class extends RunResultBase {
+  constructor(result = {}) {
+    super(result.state);
+    /**
+     * The current turn number
+     */
+    __publicField(this, "currentTurn", 0);
+    /**
+     * The maximum number of turns that can be run
+     */
+    __publicField(this, "maxTurns");
+    __privateAdd(this, _error, null);
+    __privateAdd(this, _signal);
+    __privateAdd(this, _readableController);
+    __privateAdd(this, _readableStream);
+    __privateAdd(this, _completedPromise);
+    __privateAdd(this, _completedPromiseResolve);
+    __privateAdd(this, _completedPromiseReject);
+    __privateAdd(this, _cancelled, false);
+    __privateAdd(this, _streamLoopPromise);
+    __privateSet(this, _signal, result.signal);
+    __privateSet(this, _readableStream, new ReadableStream({
+      start: (controller) => {
+        __privateSet(this, _readableController, controller);
+      },
+      cancel: () => {
+        __privateSet(this, _cancelled, true);
+      }
+    }));
+    __privateSet(this, _completedPromise, new Promise((resolve, reject) => {
+      __privateSet(this, _completedPromiseResolve, resolve);
+      __privateSet(this, _completedPromiseReject, reject);
+    }));
+    if (__privateGet(this, _signal)) {
+      const handleAbort = () => {
+        var _a2;
+        if (__privateGet(this, _cancelled)) {
+          return;
+        }
+        __privateSet(this, _cancelled, true);
+        const controller = __privateGet(this, _readableController);
+        __privateSet(this, _readableController, void 0);
+        if (__privateGet(this, _readableStream).locked) {
+          if (controller) {
+            try {
+              controller.close();
+            } catch (err) {
+              logger_default.debug(`Failed to close readable stream on abort: ${err}`);
+            }
+          }
+        } else {
+          void __privateGet(this, _readableStream).cancel(__privateGet(this, _signal)?.reason).catch((err) => {
+            logger_default.debug(`Failed to cancel readable stream on abort: ${err}`);
+          });
+        }
+        (_a2 = __privateGet(this, _completedPromiseResolve)) == null ? void 0 : _a2.call(this);
+      };
+      if (__privateGet(this, _signal).aborted) {
+        handleAbort();
+      } else {
+        __privateGet(this, _signal).addEventListener("abort", handleAbort, { once: true });
+      }
+    }
+  }
+  /**
+   * The current agent that is running
+   */
+  get currentAgent() {
+    return this.lastAgent;
+  }
+  /**
+   * @internal
+   * Adds an item to the stream of output items
+   */
+  _addItem(item) {
+    if (!this.cancelled) {
+      __privateGet(this, _readableController)?.enqueue(item);
+    }
+  }
+  /**
+   * @internal
+   * Indicates that the stream has been completed
+   */
+  _done() {
+    var _a2;
+    if (!this.cancelled && __privateGet(this, _readableController)) {
+      __privateGet(this, _readableController).close();
+      __privateSet(this, _readableController, void 0);
+      (_a2 = __privateGet(this, _completedPromiseResolve)) == null ? void 0 : _a2.call(this);
+    }
+  }
+  /**
+   * @internal
+   * Handles an error in the stream loop.
+   */
+  _raiseError(err) {
+    var _a2;
+    if (!this.cancelled && __privateGet(this, _readableController)) {
+      __privateGet(this, _readableController).error(err);
+      __privateSet(this, _readableController, void 0);
+    }
+    __privateSet(this, _error, err);
+    (_a2 = __privateGet(this, _completedPromiseReject)) == null ? void 0 : _a2.call(this, err);
+    __privateGet(this, _completedPromise).catch((e) => {
+      logger_default.debug(`Resulted in an error: ${e}`);
+    });
+  }
+  /**
+   * Returns true if the stream has been cancelled.
+   */
+  get cancelled() {
+    return __privateGet(this, _cancelled);
+  }
+  /**
+   * Returns the underlying readable stream.
+   * @returns A readable stream of the agent run.
+   */
+  toStream() {
+    return __privateGet(this, _readableStream);
+  }
+  /**
+   * Await this promise to ensure that the stream has been completed if you are not consuming the
+   * stream directly.
+   */
+  get completed() {
+    return __privateGet(this, _completedPromise);
+  }
+  /**
+   * Error thrown during the run, if any.
+   */
+  get error() {
+    return __privateGet(this, _error);
+  }
+  toTextStream(options = {}) {
+    const stream = __privateGet(this, _readableStream).pipeThrough(new TransformStream({
+      transform(event, controller) {
+        if (event.type === "raw_model_stream_event" && event.data.type === "output_text_delta") {
+          const item = StreamEventTextStream.parse(event.data);
+          controller.enqueue(item.delta);
+        }
+      }
+    }));
+    if (options.compatibleWithNodeStreams) {
+      return Readable.fromWeb(stream);
+    }
+    return stream;
+  }
+  [Symbol.asyncIterator]() {
+    return __privateGet(this, _readableStream)[Symbol.asyncIterator]();
+  }
+  /**
+   * @internal
+   * Sets the stream loop promise that completes when the internal stream loop finishes.
+   * This is used to defer trace end until all agent work is complete.
+   */
+  _setStreamLoopPromise(promise2) {
+    __privateSet(this, _streamLoopPromise, promise2);
+  }
+  /**
+   * @internal
+   * Returns a promise that resolves when the stream loop completes.
+   * This is used by the tracing system to wait for all agent work before ending the trace.
+   */
+  _getStreamLoopPromise() {
+    return __privateGet(this, _streamLoopPromise);
+  }
+};
+_error = new WeakMap();
+_signal = new WeakMap();
+_readableController = new WeakMap();
+_readableStream = new WeakMap();
+_completedPromise = new WeakMap();
+_completedPromiseResolve = new WeakMap();
+_completedPromiseReject = new WeakMap();
+_cancelled = new WeakMap();
+_streamLoopPromise = new WeakMap();
 
 // node_modules/@openai/agents-core/dist/tracing/context.mjs
 var _contextAsyncLocalStorage;
@@ -18554,6 +24782,40 @@ function getCurrentSpan() {
   }
   return null;
 }
+function _wrapFunctionWithTraceLifecycle(fn) {
+  return async () => {
+    const trace = getCurrentTrace();
+    if (!trace) {
+      throw new Error("No trace found");
+    }
+    await trace.start();
+    const result = await fn(trace);
+    if (result instanceof StreamedRunResult) {
+      const streamLoopPromise = result._getStreamLoopPromise();
+      if (streamLoopPromise) {
+        streamLoopPromise.finally(() => trace.end());
+        return result;
+      }
+    }
+    await trace.end();
+    return result;
+  };
+}
+async function withTrace(trace, fn, options = {}) {
+  const newTrace = typeof trace === "string" ? getGlobalTraceProvider().createTrace({
+    ...options,
+    name: trace
+  }) : trace;
+  return getContextAsyncLocalStorage().run({ trace: newTrace }, _wrapFunctionWithTraceLifecycle(fn));
+}
+async function getOrCreateTrace(fn, options = {}) {
+  const currentTrace = getCurrentTrace();
+  if (currentTrace) {
+    return await fn();
+  }
+  const newTrace = getGlobalTraceProvider().createTrace(options);
+  return getContextAsyncLocalStorage().run({ trace: newTrace }, _wrapFunctionWithTraceLifecycle(fn));
+}
 function setCurrentSpan(span) {
   const context = getContextAsyncLocalStorage().getStore();
   if (!context) {
@@ -18572,6 +24834,12 @@ function resetCurrentSpan() {
     context.span = context.previousSpan;
     context.previousSpan = context.previousSpan?.previousSpan;
     getContextAsyncLocalStorage().enterWith(context);
+  }
+}
+function addErrorToCurrentSpan(spanError) {
+  const currentSpan = getCurrentSpan();
+  if (currentSpan) {
+    currentSpan.setError(spanError);
   }
 }
 function cloneCurrentContext(context) {
@@ -18814,7 +25082,7 @@ function removePrivateFields(obj) {
 }
 
 // node_modules/@openai/agents-core/dist/tracing/spans.mjs
-var _data, _traceId, _spanId, _parentId, _processor, _startedAt, _endedAt, _error, _previousSpan;
+var _data, _traceId, _spanId, _parentId, _processor, _startedAt, _endedAt, _error2, _previousSpan;
 var _Span = class _Span {
   constructor(options, processor) {
     __publicField(this, "type", "trace.span");
@@ -18825,14 +25093,14 @@ var _Span = class _Span {
     __privateAdd(this, _processor);
     __privateAdd(this, _startedAt);
     __privateAdd(this, _endedAt);
-    __privateAdd(this, _error);
+    __privateAdd(this, _error2);
     __privateAdd(this, _previousSpan);
     __privateSet(this, _traceId, options.traceId);
     __privateSet(this, _spanId, options.spanId ?? generateSpanId());
     __privateSet(this, _data, options.data);
     __privateSet(this, _processor, processor);
     __privateSet(this, _parentId, options.parentId ?? null);
-    __privateSet(this, _error, options.error ?? null);
+    __privateSet(this, _error2, options.error ?? null);
     __privateSet(this, _startedAt, options.startedAt ?? null);
     __privateSet(this, _endedAt, options.endedAt ?? null);
   }
@@ -18871,10 +25139,10 @@ var _Span = class _Span {
     __privateGet(this, _processor).onSpanEnd(this);
   }
   setError(error46) {
-    __privateSet(this, _error, error46);
+    __privateSet(this, _error2, error46);
   }
   get error() {
-    return __privateGet(this, _error);
+    return __privateGet(this, _error2);
   }
   get startedAt() {
     return __privateGet(this, _startedAt);
@@ -18890,7 +25158,7 @@ var _Span = class _Span {
       data: this.spanData,
       startedAt: __privateGet(this, _startedAt) ?? void 0,
       endedAt: __privateGet(this, _endedAt) ?? void 0,
-      error: __privateGet(this, _error) ?? void 0
+      error: __privateGet(this, _error2) ?? void 0
     }, __privateGet(this, _processor));
     span.previousSpan = this.previousSpan?.clone();
     return span;
@@ -18915,7 +25183,7 @@ _parentId = new WeakMap();
 _processor = new WeakMap();
 _startedAt = new WeakMap();
 _endedAt = new WeakMap();
-_error = new WeakMap();
+_error2 = new WeakMap();
 _previousSpan = new WeakMap();
 var Span = _Span;
 var NoopSpan = class extends Span {
@@ -19381,6 +25649,19 @@ function approvalItemToRealtimeApprovalItem(item) {
     approved: null
   };
 }
+
+// node_modules/@openai/agents-realtime/dist/realtimeAgent.mjs
+var RealtimeAgent = class extends Agent {
+  constructor(config2) {
+    super(config2);
+    /**
+     * The voice intended to be used by the agent. If another agent already spoke during the
+     * RealtimeSession, changing the voice during a handoff will fail.
+     */
+    __publicField(this, "voice");
+    this.voice = config2.voice;
+  }
+};
 
 // node_modules/@openai/agents-realtime/dist/guardrail.mjs
 function getRealtimeGuardrailSettings(settings) {
@@ -21268,7 +27549,7 @@ function toRealtimeToolDefinition(tool2) {
 function cloneDefaultSessionConfig() {
   return JSON.parse(JSON.stringify(DEFAULT_OPENAI_REALTIME_SESSION_CONFIG));
 }
-var _transport, _currentAgent, _currentTools, _context, _outputGuardrails, _outputGuardrailSettings, _transcribedTextDeltas, _history, _shouldIncludeAudioData, _interruptedByGuardrail, _audioStarted, _allMcpToolsByServer, _availableMcpTools, _lastSessionConfig, _automaticallyTriggerResponseForMcpToolCalls, _RealtimeSession_instances, setCurrentAgent_fn, getSessionConfig_fn, handleHandoff_fn, handleFunctionToolCall_fn, handleFunctionCall_fn, runOutputGuardrails_fn, setEventListeners_fn, updateAvailableMcpTools_fn;
+var _transport, _currentAgent, _currentTools, _context, _outputGuardrails, _outputGuardrailSettings, _transcribedTextDeltas, _history, _shouldIncludeAudioData, _interruptedByGuardrail, _audioStarted, _allMcpToolsByServer, _availableMcpTools, _lastSessionConfig, _automaticallyTriggerResponseForMcpToolCalls, _RealtimeSession_instances, setCurrentAgent_fn, getSessionConfig_fn, handleHandoff_fn, handleFunctionToolCall_fn, handleFunctionCall_fn, runOutputGuardrails_fn2, setEventListeners_fn, updateAvailableMcpTools_fn;
 var _RealtimeSession = class _RealtimeSession extends BrowserEventEmitter {
   constructor(initialAgent, options = {}) {
     super();
@@ -21679,7 +27960,7 @@ handleFunctionCall_fn = async function(toolCall) {
     }
   }
 };
-runOutputGuardrails_fn = async function(output, responseId, itemId) {
+runOutputGuardrails_fn2 = async function(output, responseId, itemId) {
   if (__privateGet(this, _outputGuardrails).length === 0) {
     return;
   }
@@ -21748,7 +28029,7 @@ setEventListeners_fn = function() {
     const itemId = item?.id ?? "";
     this.emit("agent_end", __privateGet(this, _context), __privateGet(this, _currentAgent), textOutput);
     __privateGet(this, _currentAgent).emit("agent_end", __privateGet(this, _context), textOutput);
-    __privateMethod(this, _RealtimeSession_instances, runOutputGuardrails_fn).call(this, textOutput, event.response.id, itemId);
+    __privateMethod(this, _RealtimeSession_instances, runOutputGuardrails_fn2).call(this, textOutput, event.response.id, itemId);
   });
   __privateGet(this, _transport).on("audio_done", () => {
     if (__privateGet(this, _audioStarted)) {
@@ -21776,7 +28057,7 @@ setEventListeners_fn = function() {
       const newRunIndex = Math.floor(newText.length / __privateGet(this, _outputGuardrailSettings).debounceTextLength);
       if (newRunIndex > lastRunIndex) {
         lastRunIndex = newRunIndex;
-        __privateMethod(this, _RealtimeSession_instances, runOutputGuardrails_fn).call(this, newText, responseId, itemId);
+        __privateMethod(this, _RealtimeSession_instances, runOutputGuardrails_fn2).call(this, newText, responseId, itemId);
       }
     } catch (err) {
       this.emit("error", {
@@ -21937,9 +28218,16 @@ var VoiceAgent = class {
       });
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
 Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
+      const agent = new RealtimeAgent({
+        name: "Concierge",
+        instructions,
+        tools: []
+        // tools can be added later if needed
+      });
       this.session = new RealtimeSession({
         transport: this.transport,
         model,
+        initialAgent: agent,
         config: {
           model,
           instructions,

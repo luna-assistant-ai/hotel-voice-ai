@@ -1,4 +1,4 @@
-import { RealtimeSession, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
+import { RealtimeSession, RealtimeAgent, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
 
 async function fetchRealtimeToken(model = 'gpt-4o-realtime-preview-2024-12-17') {
   const res = await fetch('/api/realtime-token', {
@@ -50,9 +50,16 @@ class VoiceAgent {
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
 Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
 
+      const agent = new RealtimeAgent({
+        name: 'Concierge',
+        instructions,
+        tools: [], // tools can be added later if needed
+      });
+
       this.session = new RealtimeSession({
         transport: this.transport,
         model,
+        initialAgent: agent,
         config: {
           model,
           instructions,
