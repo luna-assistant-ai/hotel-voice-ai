@@ -1,6 +1,8 @@
+import { Agent } from '@openai/agents-core';
 import { RealtimeSession, RealtimeAgent, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
 
-// Temporary shim: some releases of agents-core lack getEnabledHandoffs; ensure it's defined.
+// Temporary shim: some releases of agents-core lack getEnabledHandoffs; ensure it's defined on Agent and RealtimeAgent.
+(Agent as any).prototype.getEnabledHandoffs = (Agent as any).prototype.getEnabledHandoffs || function () { return []; };
 (RealtimeAgent as any).prototype.getEnabledHandoffs = (RealtimeAgent as any).prototype.getEnabledHandoffs || function () { return []; };
 
 async function fetchRealtimeToken(model = 'gpt-4o-realtime-preview-2024-12-17') {

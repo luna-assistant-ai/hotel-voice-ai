@@ -501,17 +501,6 @@ var require_browser = __commonJS({
   }
 });
 
-// node_modules/@openai/agents-realtime/dist/metadata.mjs
-var METADATA = {
-  "name": "@openai/agents-realtime",
-  "version": "0.3.4",
-  "versions": {
-    "@openai/agents-realtime": "0.3.4",
-    "@openai/agents-core": "workspace:*"
-  }
-};
-var metadata_default = METADATA;
-
 // node_modules/@openai/agents-core/dist/utils/safeExecute.mjs
 async function safeExecute(fn) {
   try {
@@ -25450,6 +25439,17 @@ function addTraceProcessor(processor) {
 // node_modules/@openai/agents-core/dist/index.mjs
 addTraceProcessor(defaultProcessor());
 
+// node_modules/@openai/agents-realtime/dist/metadata.mjs
+var METADATA = {
+  "name": "@openai/agents-realtime",
+  "version": "0.3.4",
+  "versions": {
+    "@openai/agents-realtime": "0.3.4",
+    "@openai/agents-core": "workspace:*"
+  }
+};
+var metadata_default = METADATA;
+
 // node_modules/@openai/agents-realtime/dist/utils.mjs
 function base64ToArrayBuffer(base643) {
   const binaryString = atob(base643);
@@ -28175,6 +28175,9 @@ updateAvailableMcpTools_fn = function() {
 var RealtimeSession = _RealtimeSession;
 
 // src/main.ts
+Agent.prototype.getEnabledHandoffs = Agent.prototype.getEnabledHandoffs || function() {
+  return [];
+};
 RealtimeAgent.prototype.getEnabledHandoffs = RealtimeAgent.prototype.getEnabledHandoffs || function() {
   return [];
 };
