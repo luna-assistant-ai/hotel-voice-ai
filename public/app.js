@@ -17,6 +17,7 @@ class VoiceAssistant {
         this.audioPlaybackQueue = [];
         this.nextPlaybackTime = 0;
         this.isAssistantSpeaking = false;
+        this.micPaused = false;
 
         // Reconnection logic
         this.reconnectAttempts = 0;
@@ -202,6 +203,11 @@ class VoiceAssistant {
             return;
         }
 
+        // Pause mic streaming when assistant is speaking to avoid echo/overlap
+        if (this.micPaused) {
+            return;
+        }
+
         // Queue the chunk
         this.pendingAudioChunks.push(data);
 
@@ -282,8 +288,14 @@ class VoiceAssistant {
                 case 'response.audio.delta':
                     // Play audio response
                     if (data.delta) {
+                        this.micPaused = true; // pause mic while assistant speaks
                         this.playAudio(data.delta);
                     }
+                    break;
+
+                case 'response.audio.done':
+                    // Assistant finished speaking
+                    this.micPaused = false;
                     break;
 
                 case 'error':
