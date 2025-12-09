@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import WebSocket from 'ws';
 import { getHotelInfo, getRoomTypes } from './hotel-config.js';
 import {
@@ -7,6 +8,8 @@ import {
   updateBooking,
   cancelBooking
 } from './booking-manager.js';
+
+dotenv.config();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';

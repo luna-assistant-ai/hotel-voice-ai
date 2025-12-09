@@ -144,6 +144,11 @@ class VoiceAssistant {
             // Load AudioWorklet module
             await this.audioContext.audioWorklet.addModule('audio-processor.js');
 
+            // Ensure audio context is running (required in some browsers)
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+
             // Create source and worklet node
             const source = this.audioContext.createMediaStreamSource(this.audioStream);
             this.audioWorkletNode = new AudioWorkletNode(this.audioContext, 'audio-capture-processor');
@@ -393,7 +398,15 @@ class VoiceAssistant {
     async playAudio(base64Audio) {
         try {
             const audioData = this.base64ToArrayBuffer(base64Audio);
-            const audioBuffer = await this.audioContext.decodeAudioData(audioData);
+            const pcm16 = new Int16Array(audioData);
+
+            // Create an AudioBuffer from PCM16 (mono, 24kHz)
+            const sampleRate = 24000;
+            const audioBuffer = this.audioContext.createBuffer(1, pcm16.length, sampleRate);
+            const channelData = audioBuffer.getChannelData(0);
+            for (let i = 0; i < pcm16.length; i++) {
+                channelData[i] = pcm16[i] / 0x8000; // convert to float32
+            }
 
             // Add to queue for smooth playback
             this.audioPlaybackQueue.push(audioBuffer);

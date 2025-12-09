@@ -5,12 +5,19 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { appendFile, mkdirSync, existsSync } from 'fs';
 import { createRealtimeSession } from './realtime-handler.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const LOG_DIR = join(__dirname, '../logs');
+const LOG_FILE = join(LOG_DIR, 'conversations.log');
+
+if (!existsSync(LOG_DIR)) {
+  mkdirSync(LOG_DIR, { recursive: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,6 +62,7 @@ setInterval(() => {
 }, 60000);
 
 wss.on('connection', async (clientWs, req) => {
+  const sessionId = `sess-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
   // Get client IP
   const clientIP = req.headers['x-forwarded-for']?.split(',')[0].trim() ||
                    req.socket.remoteAddress;
@@ -96,6 +104,7 @@ wss.on('connection', async (clientWs, req) => {
   connectionsByIP.set(clientIP, currentConnections + 1);
 
   console.log(`🔌 Client connected from ${clientIP} (${currentConnections + 1}/${MAX_CONNECTIONS_PER_IP})`);
+  logConversation(sessionId, 'info', `client connected from ${clientIP}`);
 
   try {
     // Create OpenAI Realtime API session
@@ -105,6 +114,7 @@ wss.on('connection', async (clientWs, req) => {
     clientWs.on('message', (message) => {
       const data = message.toString();
       console.log('📤 Client -> OpenAI:', data.substring(0, 100));
+      logConversation(sessionId, 'client->openai', summarizeMessage(data));
 
       if (openAiWs.readyState === WebSocket.OPEN) {
         openAiWs.send(data);
@@ -115,6 +125,7 @@ wss.on('connection', async (clientWs, req) => {
     openAiWs.on('message', (message) => {
       const data = message.toString();
       console.log('📥 OpenAI -> Client:', data.substring(0, 100));
+      logConversation(sessionId, 'openai->client', summarizeMessage(data));
 
       if (clientWs.readyState === WebSocket.OPEN) {
         clientWs.send(data);
@@ -124,6 +135,7 @@ wss.on('connection', async (clientWs, req) => {
     // Handle disconnections
     clientWs.on('close', () => {
       console.log('🔌 Client disconnected');
+      logConversation(sessionId, 'info', 'client disconnected');
       // Decrement connection count
       const count = connectionsByIP.get(clientIP) || 0;
       if (count > 0) {
@@ -134,12 +146,14 @@ wss.on('connection', async (clientWs, req) => {
 
     openAiWs.on('close', () => {
       console.log('🔌 OpenAI connection closed');
+      logConversation(sessionId, 'info', 'openai connection closed');
       clientWs.close();
     });
 
     // Handle errors
     clientWs.on('error', (error) => {
       console.error('❌ Client WebSocket error:', error);
+      logConversation(sessionId, 'error', `client ws error: ${error.message}`);
       // Decrement connection count
       const count = connectionsByIP.get(clientIP) || 0;
       if (count > 0) {
@@ -150,11 +164,13 @@ wss.on('connection', async (clientWs, req) => {
 
     openAiWs.on('error', (error) => {
       console.error('❌ OpenAI WebSocket error:', error);
+      logConversation(sessionId, 'error', `openai ws error: ${error.message}`);
       clientWs.close();
     });
 
   } catch (error) {
     console.error('❌ Failed to create OpenAI session:', error);
+    logConversation(sessionId, 'error', `failed to create session: ${error.message}`);
     // Decrement connection count
     const count = connectionsByIP.get(clientIP) || 0;
     if (count > 0) {
@@ -165,3 +181,35 @@ wss.on('connection', async (clientWs, req) => {
 });
 
 console.log('🎙️ WebSocket server ready for voice connections');
+
+function logConversation(sessionId, direction, message) {
+  const line = `[${new Date().toISOString()}][${sessionId}][${direction}] ${message}\n`;
+  appendFile(LOG_FILE, line, (err) => {
+    if (err) {
+      console.error('❌ Failed to write log:', err);
+    }
+  });
+}
+
+function summarizeMessage(rawData) {
+  try {
+    const msg = JSON.parse(rawData);
+    let summary = msg.type || 'unknown';
+
+    if (msg.type === 'conversation.item.input_audio_transcription.completed') {
+      summary += ` text="${(msg.transcript || '').slice(0, 120)}"`;
+    } else if (msg.type === 'response.audio_transcript.delta' || msg.type === 'response.audio_transcript.done') {
+      summary += ` text="${(msg.delta || msg.transcript || '').slice(0, 120)}"`;
+    } else if (msg.type === 'response.function_call_arguments.done') {
+      summary += ` func=${msg.name || msg.call_id || 'unknown'}`;
+    } else if (msg.type === 'response.audio.delta' && msg.delta) {
+      summary += ` audio_len=${msg.delta.length}`;
+    } else if (msg.type === 'error' && msg.error) {
+      summary += ` ${msg.error.message || ''}`;
+    }
+
+    return summary;
+  } catch {
+    return `raw="${rawData.substring(0, 120)}"`;
+  }
+}
