@@ -28181,6 +28181,11 @@ Agent.prototype.getEnabledHandoffs = Agent.prototype.getEnabledHandoffs || funct
 RealtimeAgent.prototype.getEnabledHandoffs = RealtimeAgent.prototype.getEnabledHandoffs || function() {
   return [];
 };
+var PatchedRealtimeAgent = class extends RealtimeAgent {
+  getEnabledHandoffs() {
+    return [];
+  }
+};
 async function fetchRealtimeToken(model = "gpt-4o-realtime-preview-2024-12-17") {
   const res = await fetch("/api/realtime-token", {
     method: "POST",
@@ -28224,7 +28229,7 @@ var VoiceAgent = class {
       });
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
 Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
-      const agent = new RealtimeAgent({
+      const agent = new PatchedRealtimeAgent({
         name: "Concierge",
         instructions,
         tools: []
