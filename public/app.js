@@ -34,6 +34,7 @@ class VoiceAssistant {
         // UI Elements
         this.connectBtn = document.getElementById('connectBtn');
         this.disconnectBtn = document.getElementById('disconnectBtn');
+        this.stopBtn = document.getElementById('stopBtn');
         this.statusIndicator = document.getElementById('statusIndicator');
         this.statusText = document.getElementById('statusText');
         this.transcriptContent = document.getElementById('transcriptContent');
@@ -43,6 +44,7 @@ class VoiceAssistant {
         // Bind event listeners
         this.connectBtn.addEventListener('click', () => this.connect());
         this.disconnectBtn.addEventListener('click', () => this.disconnect());
+        this.stopBtn.addEventListener('click', () => this.stopAssistantReply());
     }
 
     async connect(isReconnect = false) {
@@ -109,6 +111,7 @@ class VoiceAssistant {
 
         this.updateStatus('Connected - Listening...', 'connected');
         this.disconnectBtn.disabled = false;
+        this.stopBtn.disabled = false;
         this.audioControls.style.display = 'block';
 
         if (wasReconnecting) {
@@ -315,6 +318,7 @@ class VoiceAssistant {
                 case 'error':
                     console.error('Server error:', data.error);
                     this.addTranscript('system', `❌ Error: ${data.error.message}`);
+                    this.updateStatus('Error - See console', 'error');
                     break;
             }
         } catch (error) {
@@ -331,6 +335,7 @@ class VoiceAssistant {
         console.log('Disconnected from server', event);
         this.isConnected = false;
         this.disconnectBtn.disabled = true;
+        this.stopBtn.disabled = true;
         this.audioControls.style.display = 'none';
 
         // Clean up audio worklet (but keep other resources for reconnection)
@@ -374,6 +379,26 @@ class VoiceAssistant {
 
         if (this.ws) {
             this.ws.close();
+        }
+    }
+
+    stopAssistantReply() {
+        // Stop local playback immediately
+        if (this.currentPlaybackSource) {
+            try {
+                this.currentPlaybackSource.stop();
+            } catch (e) {
+                console.warn('Stop playback error:', e);
+            }
+            this.currentPlaybackSource = null;
+        }
+        this.audioPlaybackQueue = [];
+        this.isAssistantSpeaking = false;
+        this.updateAssistantSpeakingIndicator(false);
+
+        // Send cancel to OpenAI
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'response.cancel' }));
         }
     }
 
