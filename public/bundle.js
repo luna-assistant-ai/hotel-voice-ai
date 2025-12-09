@@ -28230,6 +28230,7 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
         tools: []
         // tools can be added later if needed
       });
+      agent.getEnabledHandoffs = agent.getEnabledHandoffs || (() => []);
       this.session = new RealtimeSession({
         transport: this.transport,
         model,

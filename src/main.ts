@@ -60,6 +60,8 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
         instructions,
         tools: [], // tools can be added later if needed
       });
+      // Ensure handoff helper exists (SDK may expect it)
+      (agent as any).getEnabledHandoffs = (agent as any).getEnabledHandoffs || (() => []);
 
       this.session = new RealtimeSession({
         transport: this.transport,
