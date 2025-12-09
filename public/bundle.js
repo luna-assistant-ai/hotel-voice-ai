@@ -28235,8 +28235,8 @@ var VoiceAgent = class {
       const model = token.model || "gpt-4o-realtime-preview-2024-12-17";
       this.transport = new OpenAIRealtimeWebRTC({
         apiKey,
-        url: token.url,
-        useInsecureApiKey: true
+        url: token.url
+        // optional, SDK defaults to OpenAI endpoint if undefined
       });
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
 Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
@@ -28248,7 +28248,11 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
       agent.getEnabledHandoffs = agent.getEnabledHandoffs || (() => []);
       this.session = new RealtimeSession(agent, {
         transport: this.transport,
-        model
+        model,
+        config: {
+          inputAudioFormat: "pcm16",
+          outputAudioFormat: "pcm16"
+        }
       });
       this.bindEvents();
       await this.session.connect({});

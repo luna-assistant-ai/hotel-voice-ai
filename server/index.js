@@ -40,13 +40,19 @@ app.post('/api/realtime-token', async (req, res) => {
     }
 
     const model = req.body?.model || 'gpt-4o-realtime-preview-2024-12-17';
-    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    // Use client secret endpoint to get an ephemeral key for browser WebRTC
+    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: JSON.stringify({ model })
+      body: JSON.stringify({
+        session: {
+          type: 'realtime',
+          model
+        }
+      })
     });
 
     if (!response.ok) {
@@ -56,7 +62,6 @@ app.post('/api/realtime-token', async (req, res) => {
     }
 
     const json = await response.json();
-    // Return only the data needed by the client (no API key exposure)
     res.json({
       model,
       client_secret: json.client_secret,

@@ -67,8 +67,7 @@ class VoiceAgent {
       // Transport (WebRTC) - uses ephemeral client key
       this.transport = new OpenAIRealtimeWebRTC({
         apiKey,
-        url: token.url,
-        useInsecureApiKey: true,
+        url: token.url, // optional, SDK defaults to OpenAI endpoint if undefined
       });
 
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
@@ -85,6 +84,10 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
       this.session = new RealtimeSession(agent, {
         transport: this.transport,
         model,
+        config: {
+          inputAudioFormat: 'pcm16',
+          outputAudioFormat: 'pcm16',
+        },
       });
 
       this.bindEvents();
