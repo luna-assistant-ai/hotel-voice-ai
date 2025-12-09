@@ -32,6 +32,43 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Hotel Voice AI' });
 });
 
+// Endpoint to create short-lived Realtime session token (for WebRTC/Agents SDK)
+app.post('/api/realtime-token', async (req, res) => {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'Missing OPENAI_API_KEY on server' });
+    }
+
+    const model = req.body?.model || 'gpt-4o-realtime-preview-2024-12-17';
+    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({ model })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('❌ Failed to create realtime session token:', text);
+      return res.status(response.status).json({ error: 'Failed to create realtime session token' });
+    }
+
+    const json = await response.json();
+    // Return only the data needed by the client (no API key exposure)
+    res.json({
+      model,
+      client_secret: json.client_secret,
+      ice_servers: json.ice_servers,
+      url: json.url
+    });
+  } catch (err) {
+    console.error('❌ /api/realtime-token error:', err);
+    res.status(500).json({ error: 'Failed to create realtime session token' });
+  }
+});
+
 // Start HTTP server
 const server = app.listen(PORT, () => {
   console.log(`🏨 Hotel Voice AI server running on port ${PORT}`);
