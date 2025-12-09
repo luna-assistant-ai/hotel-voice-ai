@@ -28229,7 +28229,6 @@ var VoiceAgent = class {
         apiKey,
         url: token.url,
         useInsecureApiKey: true
-        // allow non-ek client secrets if needed
       });
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
 Be concise, warm, and handle bookings, availability, and cancellations. Confirm details and prices.`;
@@ -28237,20 +28236,11 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
         name: "Concierge",
         instructions,
         tools: []
-        // tools can be added later if needed
       });
       agent.getEnabledHandoffs = agent.getEnabledHandoffs || (() => []);
-      this.session = new RealtimeSession({
+      this.session = new RealtimeSession(agent, {
         transport: this.transport,
-        model,
-        initialAgent: agent,
-        config: {
-          model,
-          instructions,
-          input_audio_format: { type: "audio/pcm", rate: 24e3 },
-          output_audio_format: { type: "audio/pcm", rate: 24e3 },
-          tools: []
-        }
+        model
       });
       this.bindEvents();
       await this.session.connect({});

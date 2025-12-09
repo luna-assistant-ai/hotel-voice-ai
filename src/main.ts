@@ -58,10 +58,11 @@ class VoiceAgent {
       const apiKey = token.client_secret?.value ?? token.client_secret?.secret ?? token.client_secret;
       const model = token.model || 'gpt-4o-realtime-preview-2024-12-17';
 
+      // Transport (WebRTC) - uses ephemeral client key
       this.transport = new OpenAIRealtimeWebRTC({
         apiKey,
         url: token.url,
-        useInsecureApiKey: true, // allow non-ek client secrets if needed
+        useInsecureApiKey: true,
       });
 
       const instructions = `You are a premium hotel concierge for Auckland Grand Hotel.
@@ -70,22 +71,14 @@ Be concise, warm, and handle bookings, availability, and cancellations. Confirm 
       const agent = new PatchedRealtimeAgent({
         name: 'Concierge',
         instructions,
-        tools: [], // tools can be added later if needed
+        tools: [],
       });
-      // Ensure handoff helper exists (SDK may expect it)
       (agent as any).getEnabledHandoffs = (agent as any).getEnabledHandoffs || (() => []);
 
-      this.session = new RealtimeSession({
+      // IMPORTANT: use SDK-expected signature new RealtimeSession(agent, options)
+      this.session = new RealtimeSession(agent, {
         transport: this.transport,
         model,
-        initialAgent: agent,
-        config: {
-          model,
-          instructions,
-          input_audio_format: { type: 'audio/pcm', rate: 24000 },
-          output_audio_format: { type: 'audio/pcm', rate: 24000 },
-          tools: [],
-        },
       });
 
       this.bindEvents();
