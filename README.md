@@ -4,21 +4,32 @@ A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. T
 
 ## ✨ Features
 
-- **🎙️ Real-time Voice Interaction**: Natural conversation with AI using OpenAI's Realtime API
+- **🎙️ Real-time Voice Interaction**: Natural conversation with AI using OpenAI's Realtime API & Agents SDK
+- **🤖 SDK-Native Tools**: Production-ready tools with Zod validation via `@openai/agents-realtime`
 - **📝 Automatic Transcription**: Real-time transcription of both user and AI speech
-- **🏨 Complete Booking System**: Create, retrieve, and cancel reservations
+- **🏨 Complete Booking System**: Create, retrieve, and cancel reservations via REST API
 - **💰 Dynamic Pricing**: Automatic calculation based on room type and duration
 - **📊 Volume Meter**: Visual feedback of microphone input
 - **💾 Data Persistence**: Simple JSON-based database for storing bookings
 - **🎨 Modern UI**: Beautiful, responsive interface with real-time status updates
-- **🔒 Security Controls**: Origin verification, rate limiting, connection tracking
-- **✅ Data Validation**: Strict date validation, capacity checks, NaN prevention
+- **🔒 Security Controls**: Origin verification, rate limiting, connection tracking, ephemeral tokens
+- **✅ Data Validation**: Strict Zod schema validation, capacity checks, NaN prevention
 - **📊 Inventory Management**: Room availability tracking with overbooking prevention
+- **🔄 Multi-Agent Architecture**: Specialized agents with handoffs for complex scenarios (optional)
 
 ## 🏗️ Architecture
 
 ### Backend (Node.js + Express)
-- **WebSocket Relay**: Connects client to OpenAI Realtime API
+- **Ephemeral Token Service**: Generates secure client secrets for browser WebRTC
+  - Uses `client_secrets` endpoint (returns `ek_*` tokens)
+  - 60-second token expiration for security
+  - No long-lived API keys exposed to browser
+- **REST API**: Booking operations endpoints
+  - `POST /api/bookings` - Create reservations
+  - `GET /api/bookings/:id` - Retrieve booking details
+  - `DELETE /api/bookings/:id` - Cancel bookings
+  - `GET /api/availability` - Check room availability
+- **Security Layer**:
   - Origin verification (same-origin + localhost only)
   - IP-based rate limiting (10 connections/min, max 3 concurrent)
   - Automatic connection tracking and cleanup
@@ -27,24 +38,29 @@ A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. T
   - Inventory tracking per room type
   - Overbooking prevention with overlap detection
   - Synchronous I/O operations (readFileSync/writeFileSync)
-- **Function Calling**: OpenAI function tools integration
-  - Initial response trigger (session.updated event)
-  - Real-time availability checking against bookings
-  - Automatic error handling and recovery
-- **Audio Processing**: Handles PCM16 audio streaming at 24kHz
 
-### Frontend (Vanilla JavaScript)
-- **Web Audio API**: Captures and processes microphone input
-- **WebSocket Client**: Real-time bidirectional communication
-- **Audio Playback**: Streams AI voice responses
+### Frontend (TypeScript + OpenAI Agents SDK)
+- **RealtimeAgent**: SDK-native voice agent with tools
+  - Tool definitions using `tool()` + Zod validation
+  - Automatic schema generation and type safety
+  - Built-in error handling and retries
+- **OpenAIRealtimeWebRTC**: WebRTC transport layer
+  - Direct browser-to-OpenAI connection
+  - Low-latency audio streaming (PCM16 @ 24kHz)
+  - Automatic audio input/output handling
+- **RealtimeSession**: Session management
+  - Event-driven architecture
+  - Real-time transcription and tool execution
+  - Graceful error recovery
 - **Interactive UI**: Status indicators, transcripts, and controls
 
 ## 📋 Prerequisites
 
-- Node.js 18+ (with ES modules support)
+- Node.js 22+ (recommended for @openai/agents SDK)
 - OpenAI API key with Realtime API access
 - Modern web browser with microphone access
 - HTTPS (required for microphone access in production)
+- npm or yarn for package management
 
 ## 🚀 Quick Start
 
@@ -75,7 +91,17 @@ HOTEL_PHONE=+64 9 123 4567
 HOTEL_EMAIL=reservations@aucklandgrandhotel.co.nz
 ```
 
-### 3. Run the Application
+### 3. Build the Frontend
+
+Build the TypeScript bundle:
+
+```bash
+npm run build
+```
+
+This compiles `src/main.ts` → `public/bundle.js` using esbuild.
+
+### 4. Run the Application
 
 ```bash
 npm start
@@ -87,7 +113,13 @@ Or use watch mode for development:
 npm run dev
 ```
 
-### 4. Access the Demo
+For frontend development with auto-rebuild:
+
+```bash
+npm run build:watch
+```
+
+### 5. Access the Demo
 
 Open your browser and navigate to:
 ```
@@ -132,21 +164,41 @@ The AI assistant can handle:
 
 ```
 hotel-voice-ai/
-├── server/
-│   ├── index.js              # Main server & WebSocket relay
-│   ├── realtime-handler.js   # OpenAI Realtime API integration
-│   ├── booking-manager.js    # Booking CRUD operations
-│   └── hotel-config.js       # Hotel & room configuration
+├── src/                      # TypeScript source (SDK implementation)
+│   ├── main.ts              # Entry point - RealtimeSession setup
+│   ├── agents.ts            # Agent definitions with handoffs
+│   ├── tools.ts             # SDK tools with Zod validation
+│   ├── booking-api.ts       # REST API client
+│   └── hotel-config.ts      # Hotel & room configuration
+├── server/                   # Node.js backend
+│   ├── index.js             # Express server + REST API + Token service
+│   ├── realtime-handler.js  # Legacy WebSocket relay (optional)
+│   ├── booking-manager.js   # Booking CRUD operations
+│   └── hotel-config.js      # Hotel configuration (legacy)
 ├── public/
-│   ├── index.html            # Main UI
-│   ├── styles.css            # Styling
-│   └── app.js                # Client-side JavaScript
-├── .env.example              # Environment template
+│   ├── index.html           # Main UI
+│   ├── styles.css           # Styling
+│   ├── bundle.js            # Compiled TypeScript (generated)
+│   └── bundle.js.map        # Source map (generated)
+├── build.mjs                # esbuild configuration
+├── .env.example             # Environment template
 ├── .gitignore
 ├── package.json
 ├── LICENSE
 └── README.md
 ```
+
+### Architecture Layers
+
+**SDK Layer (Recommended)**:
+- `src/` - TypeScript implementation using `@openai/agents-realtime`
+- Compiled to `public/bundle.js` via esbuild
+- Production-ready tools with Zod validation
+- Direct WebRTC to OpenAI (low latency)
+
+**Legacy Layer (Maintained for compatibility)**:
+- `server/realtime-handler.js` - WebSocket relay implementation
+- Can be removed once fully migrated to SDK
 
 ## 🔧 API Functions
 
@@ -429,7 +481,39 @@ For issues and questions:
 - Open an issue on GitHub
 - Check the troubleshooting section above
 
-## ✨ Recent Improvements (v1.1.0)
+## ✨ Recent Improvements (v2.0.0 - SDK Migration)
+
+### 🚀 OpenAI Agents SDK Integration
+- ✅ **Full SDK Migration**: Migrated to `@openai/agents-realtime` v0.3.4
+- ✅ **Tool Definitions with Zod**: Production-ready tools using `tool()` + Zod schemas
+- ✅ **TypeScript Architecture**: Type-safe codebase with full IntelliSense support
+- ✅ **REST API Backend**: Secure booking operations via Express endpoints
+- ✅ **Ephemeral Token Security**: Client secrets (`ek_*`) with 60s expiration
+- ✅ **Multi-Agent Support**: Optional handoffs between specialized agents
+- ✅ **Build Pipeline**: Automated TypeScript compilation with esbuild
+
+### 🔧 Technical Improvements
+- ✅ **Schema Validation**: Automatic request/response validation via Zod
+- ✅ **Error Handling**: Built-in retry logic and graceful error recovery
+- ✅ **WebRTC Transport**: Direct browser-to-OpenAI connection (lower latency)
+- ✅ **Tool Execution Tracking**: Real-time visibility into tool calls
+- ✅ **Modular Architecture**: Separated concerns (agents, tools, API client)
+
+### 📝 Developer Experience
+- ✅ **Hot Reload**: `npm run build:watch` for frontend development
+- ✅ **Source Maps**: Full debugging support in browser DevTools
+- ✅ **Type Safety**: End-to-end TypeScript with no `any` types
+- ✅ **Documentation**: Comprehensive inline JSDoc comments
+
+**Migration Notes**:
+- SDK tools replace legacy JSON function definitions
+- WebSocket relay (`realtime-handler.js`) kept for backward compatibility
+- All bookings now go through REST API for better security
+- Workaround patches for `getEnabledHandoffs` included (SDK v0.3.4 limitation)
+
+---
+
+## ✨ Previous Improvements (v1.1.0)
 
 ### Security Enhancements
 - ✅ **WebSocket Origin Verification**: Prevents unauthorized access from external domains

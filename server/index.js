@@ -7,6 +7,13 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { appendFile, mkdirSync, existsSync } from 'fs';
 import { createRealtimeSession } from './realtime-handler.js';
+import {
+  createBooking,
+  getBooking,
+  cancelBooking,
+  getAllBookings
+} from './booking-manager.js';
+import { getRoomTypes } from './hotel-config.js';
 
 dotenv.config();
 
@@ -72,6 +79,111 @@ app.post('/api/realtime-token', async (req, res) => {
     console.error('❌ /api/realtime-token error:', err);
     res.status(500).json({ error: 'Failed to create realtime session token' });
   }
+});
+
+// REST API endpoints for booking operations
+app.post('/api/bookings', (req, res) => {
+  const result = createBooking(req.body);
+  if (result.success) {
+    res.json({ success: true, data: result.booking, message: result.message });
+  } else {
+    res.status(400).json({ success: false, error: result.error });
+  }
+});
+
+app.get('/api/bookings/:confirmationNumber', (req, res) => {
+  const result = getBooking(req.params.confirmationNumber);
+  if (result.success) {
+    res.json({ success: true, data: result.booking });
+  } else {
+    res.status(404).json({ success: false, error: result.error });
+  }
+});
+
+app.delete('/api/bookings/:confirmationNumber', (req, res) => {
+  const result = cancelBooking(req.params.confirmationNumber);
+  if (result.success) {
+    res.json({ success: true, message: result.message });
+  } else {
+    res.status(404).json({ success: false, error: result.error });
+  }
+});
+
+app.get('/api/availability', (req, res) => {
+  const { check_in_date, check_out_date, room_type } = req.query;
+
+  // Validate dates
+  const checkIn = new Date(check_in_date);
+  const checkOut = new Date(check_out_date);
+
+  if (isNaN(checkIn.getTime())) {
+    return res.status(400).json({ success: false, error: 'Invalid check-in date' });
+  }
+
+  if (isNaN(checkOut.getTime())) {
+    return res.status(400).json({ success: false, error: 'Invalid check-out date' });
+  }
+
+  const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+
+  if (nights <= 0) {
+    return res.status(400).json({ success: false, error: 'Check-out date must be after check-in date' });
+  }
+
+  // Check room type validity
+  const roomTypes = getRoomTypes();
+  const requestedRoom = room_type ? roomTypes.find(r => r.id === room_type) : null;
+
+  if (room_type && !requestedRoom) {
+    return res.status(400).json({ success: false, error: 'Invalid room type' });
+  }
+
+  // Check actual availability against existing bookings
+  const allBookings = getAllBookings();
+  const bookings = allBookings.bookings || [];
+
+  const roomsToCheck = room_type ? [requestedRoom] : roomTypes;
+  const availableRooms = [];
+
+  for (const room of roomsToCheck) {
+    // Count overlapping bookings for this room type
+    const overlappingBookings = bookings.filter(booking => {
+      if (booking.status !== 'confirmed') return false;
+      if (booking.room_type !== room.id) return false;
+
+      const bookingCheckIn = new Date(booking.check_in_date);
+      const bookingCheckOut = new Date(booking.check_out_date);
+
+      // Check for date overlap
+      return !(checkOut <= bookingCheckIn || checkIn >= bookingCheckOut);
+    }).length;
+
+    const inventory = room.inventory || 5;
+    const availableCount = inventory - overlappingBookings;
+
+    if (availableCount > 0) {
+      availableRooms.push({
+        ...room,
+        available_count: availableCount
+      });
+    }
+  }
+
+  if (availableRooms.length === 0) {
+    return res.json({
+      success: true,
+      available: false,
+      message: `No rooms available for the selected dates (${nights} night(s))`
+    });
+  }
+
+  res.json({
+    success: true,
+    available: true,
+    rooms: availableRooms,
+    nights: nights,
+    message: `${availableRooms.length} room type(s) available for ${nights} night(s)`
+  });
 });
 
 // Start HTTP server
