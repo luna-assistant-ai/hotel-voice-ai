@@ -12,6 +12,8 @@ class VoiceAssistant {
         this.maxPendingChunks = 5; // Slightly larger to avoid aggressive drops
         this.maxBufferedBytes = 64 * 1024; // WebSocket bufferedAmount guardrail
         this.isSending = false;
+        this.samplesSinceCommit = 0;
+        this.minSamplesPerCommit = 2400; // 100ms at 24kHz
 
         // Audio playback queue for smooth streaming
         this.audioPlaybackQueue = [];
@@ -232,6 +234,7 @@ class VoiceAssistant {
 
                 // Convert PCM16 to base64
                 const base64Audio = this.arrayBufferToBase64(chunk.audio);
+                this.samplesSinceCommit += chunk.sampleCount || 0;
 
                 // Send append message
                 const appendMessage = {
@@ -241,8 +244,9 @@ class VoiceAssistant {
                 this.ws.send(JSON.stringify(appendMessage));
 
                 // On long silence, ask server to commit the buffer to reduce latency
-                if (chunk.shouldCommit) {
+                if (chunk.shouldCommit && this.samplesSinceCommit >= this.minSamplesPerCommit) {
                     this.ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+                    this.samplesSinceCommit = 0;
                 }
 
                 // Small delay to avoid overwhelming the WebSocket
