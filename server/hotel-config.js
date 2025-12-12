@@ -1,25 +1,26 @@
 export function getHotelInfo() {
   return {
-    name: process.env.HOTEL_NAME || 'Auckland Grand Hotel',
-    location: 'Auckland CBD, New Zealand',
-    address: process.env.HOTEL_ADDRESS || '123 Queen Street, Auckland CBD, New Zealand',
-    phone: process.env.HOTEL_PHONE || '+64 9 123 4567',
-    email: process.env.HOTEL_EMAIL || 'reservations@aucklandgrandhotel.co.nz',
+    name: process.env.HOTEL_NAME || 'Novotel Auckland Ellerslie',
+    location: 'Ellerslie, Auckland, New Zealand',
+    address: process.env.HOTEL_ADDRESS || '72-112 Greenlane Road East, Ellerslie, Auckland 1051',
+    phone: process.env.HOTEL_PHONE || '+64 9 529 9530',
+    email: process.env.HOTEL_EMAIL || 'H6167@accor.com',
     checkInTime: '2:00 PM',
     checkOutTime: '11:00 AM',
     amenities: [
       'Free WiFi',
-      'Swimming Pool',
-      'Fitness Center',
-      'Restaurant & Bar',
+      'Outdoor Swimming Pool',
+      'Fully-Equipped Fitness Center',
+      'Restaurant & Stylish Bar',
       '24/7 Room Service',
       'Concierge Service',
-      'Airport Shuttle',
+      'Free Parking',
       'Business Center',
-      'Spa & Wellness',
-      'Parking Available'
+      'Conference Facilities',
+      'Near Ellerslie Racecourse',
+      'Voice AI Assistant by Brantas'
     ],
-    description: 'A luxury hotel in the heart of Auckland, offering stunning views of the harbor and city skyline.'
+    description: 'A premium 4.5-star Accor hotel in Ellerslie, Auckland. Just 15 minutes from the city center, offering modern amenities, stylish accommodations, and advanced Voice AI technology powered by Brantas.'
   };
 }
 
