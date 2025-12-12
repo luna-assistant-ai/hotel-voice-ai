@@ -5,7 +5,7 @@ A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. T
 ## ✨ Features
 
 - **🎙️ Real-time Voice Interaction**: Natural conversation with AI using OpenAI's Realtime API & Agents SDK
-- **🤖 SDK-Native Tools**: Production-ready tools with Zod validation via `@openai/agents-realtime`
+- **🤖 SDK-Native Tools**: Production-ready tools with Zod validation via `@openai/agents`
 - **📝 Automatic Transcription**: Real-time transcription of both user and AI speech
 - **🏨 Complete Booking System**: Create, retrieve, and cancel reservations via REST API
 - **💰 Dynamic Pricing**: Automatic calculation based on room type and duration
@@ -172,15 +172,19 @@ hotel-voice-ai/
 │   └── hotel-config.ts      # Hotel & room configuration
 ├── server/                   # Node.js backend
 │   ├── index.js             # Express server + REST API + Token service
-│   ├── realtime-handler.js  # Legacy WebSocket relay (optional)
+│   ├── realtime-handler.js  # WebSocket relay (used by legacy WebSocket connections)
 │   ├── booking-manager.js   # Booking CRUD operations
-│   └── hotel-config.js      # Hotel configuration (legacy)
+│   └── hotel-config.js      # Hotel configuration
 ├── public/
 │   ├── index.html           # Main UI
 │   ├── styles.css           # Styling
 │   ├── bundle.js            # Compiled TypeScript (generated)
-│   └── bundle.js.map        # Source map (generated)
+│   ├── bundle.js.map        # Source map (generated)
+│   ├── app.js               # Legacy client (optional)
+│   └── audio-processor.js   # Legacy audio processor (optional)
 ├── build.mjs                # esbuild configuration
+├── esbuild.config.mjs       # esbuild config (alternative)
+├── test.sh                  # Test script
 ├── .env.example             # Environment template
 ├── .gitignore
 ├── package.json
@@ -190,15 +194,18 @@ hotel-voice-ai/
 
 ### Architecture Layers
 
-**SDK Layer (Recommended)**:
-- `src/` - TypeScript implementation using `@openai/agents-realtime`
+**SDK Layer (Recommended - Default)**:
+- `src/` - TypeScript implementation using `@openai/agents`
 - Compiled to `public/bundle.js` via esbuild
 - Production-ready tools with Zod validation
 - Direct WebRTC to OpenAI (low latency)
+- Used by default when you access the application
 
-**Legacy Layer (Maintained for compatibility)**:
+**WebSocket Layer (Active for backward compatibility)**:
 - `server/realtime-handler.js` - WebSocket relay implementation
-- Can be removed once fully migrated to SDK
+- `server/index.js` maintains WebSocket server on port 3000
+- Used by legacy clients or custom WebSocket implementations
+- Runs in parallel with SDK implementation
 
 ## 🔧 API Functions
 
@@ -236,6 +243,16 @@ Checks room availability.
 - `check_in_date`: YYYY-MM-DD format
 - `check_out_date`: YYYY-MM-DD format
 - `room_type`: Room type (optional)
+
+### `get_hotel_info`
+Provides detailed hotel and room information.
+
+**Parameters:**
+- None (no parameters required)
+
+**Returns:**
+- Hotel details (name, address, phone, email, amenities)
+- Complete room types list with pricing and features
 
 ## 💾 Data Storage
 
@@ -336,7 +353,7 @@ Edit `server/hotel-config.js` to customize:
 
 ### Change AI Voice
 
-Edit `server/realtime-handler.js`, line 23:
+Edit `server/realtime-handler.js`, line 35:
 ```javascript
 voice: 'alloy' // Options: alloy, echo, shimmer
 ```
@@ -485,7 +502,7 @@ For issues and questions:
 ## ✨ Recent Improvements (v2.0.0 - SDK Migration)
 
 ### 🚀 OpenAI Agents SDK Integration
-- ✅ **Full SDK Migration**: Migrated to `@openai/agents-realtime` v0.3.4
+- ✅ **Full SDK Migration**: Migrated to `@openai/agents` v0.3.4
 - ✅ **Tool Definitions with Zod**: Production-ready tools using `tool()` + Zod schemas
 - ✅ **TypeScript Architecture**: Type-safe codebase with full IntelliSense support
 - ✅ **REST API Backend**: Secure booking operations via Express endpoints
@@ -557,8 +574,10 @@ Potential improvements for this demo:
 
 ---
 
-**Made with ❤️ by [Brantas](https://brantas.co.nz) for demonstration purposes**
+**Developed by [Brantas](https://brantas.co.nz) - Voice AI demonstration for Accor Hotels**
 
 **About Brantas**: Brantas is a leading hospitality technology solutions provider in the South Pacific, offering innovative solutions including Voice AI assistants, security systems, energy management, and more to hotels, resorts, and accommodation venues across New Zealand, Fiji, Cook Islands, Samoa, Tahiti, New Caledonia, Vanuatu, and Papua New Guinea.
 
-**Note**: This is a demo application showcasing Voice AI capabilities for the hospitality industry. It demonstrates how Brantas' technology can enhance guest experiences at Accor properties and other hotels. This should not be used in production without proper security measures and enhancements.
+**About this Demo**: This application could demonstrate how Brantas' advanced Voice AI technology capabilities can be specifically tailored for the hospitality industry. Built as a proof-of-concept for Accor Hotels, it showcases how natural voice interactions could transform the guest booking experience at premium properties like Novotel Auckland Ellerslie, with potential for deployment across Accor's global hotel portfolio.
+
+**Note**: This is a demonstration application. Production deployment would require additional security measures, payment integration, and enterprise-grade infrastructure.
