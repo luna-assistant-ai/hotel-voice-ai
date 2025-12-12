@@ -16677,26 +16677,27 @@ Please respond again following policy. Apologize for not being able to answer th
   // src/hotel-config.ts
   function getHotelInfo() {
     return {
-      name: "Auckland Grand Hotel",
-      location: "Auckland CBD, New Zealand",
-      address: "123 Queen Street, Auckland CBD, New Zealand",
-      phone: "+64 9 123 4567",
-      email: "reservations@aucklandgrandhotel.co.nz",
+      name: "Novotel Auckland Ellerslie",
+      location: "Ellerslie, Auckland, New Zealand",
+      address: "72-112 Greenlane Road East, Ellerslie, Auckland 1051",
+      phone: "+64 9 529 9530",
+      email: "H6167@accor.com",
       checkInTime: "2:00 PM",
       checkOutTime: "11:00 AM",
       amenities: [
         "Free WiFi",
-        "Swimming Pool",
-        "Fitness Center",
-        "Restaurant & Bar",
+        "Outdoor Swimming Pool",
+        "Fully-Equipped Fitness Center",
+        "Restaurant & Stylish Bar",
         "24/7 Room Service",
         "Concierge Service",
-        "Airport Shuttle",
+        "Free Parking",
         "Business Center",
-        "Spa & Wellness",
-        "Parking Available"
+        "Conference Facilities",
+        "Near Ellerslie Racecourse",
+        "Voice AI Assistant by Brantas"
       ],
-      description: "A luxury hotel in the heart of Auckland, offering stunning views of the harbor and city skyline."
+      description: "A premium 4.5-star Accor hotel in Ellerslie, Auckland. Just 15 minutes from the city center, offering modern amenities, stylish accommodations, and advanced Voice AI technology powered by Brantas."
     };
   }
   function getRoomTypes() {
@@ -17145,7 +17146,7 @@ a premium brand\u2014ensure every word reflects that commitment to excellence.`;
   }
   var bookingAgent = new PatchedAgent({
     name: "Booking Specialist",
-    instructions: `You are a booking specialist for Auckland Grand Hotel.
+    instructions: `You are a booking specialist for Novotel Auckland Ellerslie, a premium Accor hotel.
 
 Your role is to:
 1. Check room availability for requested dates
@@ -17167,7 +17168,7 @@ Be professional, thorough, and detail-oriented.`,
   });
   var customerServiceAgent = new PatchedAgent({
     name: "Customer Service",
-    instructions: `You are a customer service specialist for Auckland Grand Hotel.
+    instructions: `You are a customer service specialist for Novotel Auckland Ellerslie, a premium Accor hotel.
 
 Your role is to:
 1. Look up existing bookings by confirmation number
