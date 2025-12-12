@@ -180,9 +180,11 @@ class VoiceAgent {
   updateLastTranscript(role: 'assistant', text: string, finalize: boolean) {
     const messages = this.transcriptContent.querySelectorAll(`.transcript-message.${role}`);
     const last = messages[messages.length - 1];
-    if (!last || finalize) {
+    if (!last) {
+      // No existing message, create a new one
       this.addTranscript(role, text);
     } else {
+      // Update the existing message (whether finalize or delta)
       const span = last.querySelector('span');
       if (span) span.textContent = text;
     }

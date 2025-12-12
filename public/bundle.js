@@ -17354,7 +17354,7 @@ Be empathetic, helpful, and solution-oriented.`,
     updateLastTranscript(role, text, finalize) {
       const messages = this.transcriptContent.querySelectorAll(`.transcript-message.${role}`);
       const last = messages[messages.length - 1];
-      if (!last || finalize) {
+      if (!last) {
         this.addTranscript(role, text);
       } else {
         const span = last.querySelector("span");
