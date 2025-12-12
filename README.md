@@ -578,6 +578,6 @@ Potential improvements for this demo:
 
 **About Brantas**: Brantas is a leading hospitality technology solutions provider in the South Pacific, offering innovative solutions including Voice AI assistants, security systems, energy management, and more to hotels, resorts, and accommodation venues across New Zealand, Fiji, Cook Islands, Samoa, Tahiti, New Caledonia, Vanuatu, and Papua New Guinea.
 
-**About this Demo**: This application demonstrates Brantas' advanced Voice AI technology capabilities specifically tailored for the hospitality industry. Built as a proof-of-concept for Accor Hotels, it showcases how natural voice interactions can transform the guest booking experience at premium properties like Novotel Auckland Ellerslie. This demo highlights the potential for deployment across Accor's global hotel portfolio.
+**About this Demo**: This application could demonstrate how Brantas' advanced Voice AI technology capabilities can be specifically tailored for the hospitality industry. Built as a proof-of-concept for Accor Hotels, it showcases how natural voice interactions could transform the guest booking experience at premium properties like Novotel Auckland Ellerslie, with potential for deployment across Accor's global hotel portfolio.
 
 **Note**: This is a demonstration application. Production deployment would require additional security measures, payment integration, and enterprise-grade infrastructure.
