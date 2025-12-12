@@ -158,7 +158,7 @@ a premium brand—ensure every word reflects that commitment to excellence.`;
  */
 export const bookingAgent = new PatchedAgent({
   name: 'Booking Specialist',
-  instructions: `You are a booking specialist for Auckland Grand Hotel.
+  instructions: `You are a booking specialist for Novotel Auckland Ellerslie, a premium Accor hotel.
 
 Your role is to:
 1. Check room availability for requested dates
@@ -185,7 +185,7 @@ Be professional, thorough, and detail-oriented.`,
  */
 export const customerServiceAgent = new PatchedAgent({
   name: 'Customer Service',
-  instructions: `You are a customer service specialist for Auckland Grand Hotel.
+  instructions: `You are a customer service specialist for Novotel Auckland Ellerslie, a premium Accor hotel.
 
 Your role is to:
 1. Look up existing bookings by confirmation number

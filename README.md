@@ -1,6 +1,6 @@
-# 🏨 Hotel Voice AI - Auckland Grand Hotel
+# 🏨 Hotel Voice AI - Novotel Auckland Ellerslie
 
-A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. This demo showcases a fully functional voice reservation system for a hotel in Auckland, New Zealand.
+A voice-based AI assistant for hotel reservations using OpenAI's Realtime API. This demo showcases Brantas' advanced Voice AI technology integrated with Novotel Auckland Ellerslie, a premium Accor hotel in New Zealand.
 
 ## ✨ Features
 
@@ -85,10 +85,10 @@ Edit `.env` and add your OpenAI API key:
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 PORT=3000
-HOTEL_NAME=Auckland Grand Hotel
-HOTEL_ADDRESS=123 Queen Street, Auckland CBD, New Zealand
-HOTEL_PHONE=+64 9 123 4567
-HOTEL_EMAIL=reservations@aucklandgrandhotel.co.nz
+HOTEL_NAME=Novotel Auckland Ellerslie
+HOTEL_ADDRESS=72-112 Greenlane Road East, Ellerslie, Auckland 1051
+HOTEL_PHONE=+64 9 529 9530
+HOTEL_EMAIL=H6167@accor.com
 ```
 
 ### 3. Build the Frontend
@@ -472,8 +472,9 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 ## 🙏 Acknowledgments
 
 - Built with [OpenAI Realtime API](https://platform.openai.com/docs/api-reference/realtime)
-- Inspired by the need for more natural hotel booking experiences
-- Demo hotel concept based on Auckland, New Zealand
+- Voice AI technology provided by [Brantas](https://brantas.co.nz)
+- Demo implementation for Novotel Auckland Ellerslie (Accor Hotels)
+- Inspired by the need for more natural hotel booking experiences in the hospitality industry
 
 ## 📞 Support
 
@@ -556,6 +557,8 @@ Potential improvements for this demo:
 
 ---
 
-**Made with ❤️ for demonstration purposes**
+**Made with ❤️ by [Brantas](https://brantas.co.nz) for demonstration purposes**
 
-**Note**: This is a demo application showcasing OpenAI's Realtime API capabilities. It should not be used in production without proper security measures and enhancements.
+**About Brantas**: Brantas is a leading hospitality technology solutions provider in the South Pacific, offering innovative solutions including Voice AI assistants, security systems, energy management, and more to hotels, resorts, and accommodation venues across New Zealand, Fiji, Cook Islands, Samoa, Tahiti, New Caledonia, Vanuatu, and Papua New Guinea.
+
+**Note**: This is a demo application showcasing Voice AI capabilities for the hospitality industry. It demonstrates how Brantas' technology can enhance guest experiences at Accor properties and other hotels. This should not be used in production without proper security measures and enhancements.
