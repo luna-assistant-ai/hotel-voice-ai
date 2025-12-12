@@ -574,7 +574,7 @@ Potential improvements for this demo:
 
 ---
 
-**Developed by [Brantas](https://brantas.co.nz) - Voice AI demonstration for Accor Hotels**
+**Developed for [Brantas](https://brantas.co.nz)**
 
 **About Brantas**: Brantas is a leading hospitality technology solutions provider in the South Pacific, offering innovative solutions including Voice AI assistants, security systems, energy management, and more to hotels, resorts, and accommodation venues across New Zealand, Fiji, Cook Islands, Samoa, Tahiti, New Caledonia, Vanuatu, and Papua New Guinea.
 
