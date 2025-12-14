@@ -29,5 +29,8 @@
     "uuid": "^9.0.1",
     "ws": "^8.16.0",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "markdown-pdf": "^11.0.0"
   }
 }
