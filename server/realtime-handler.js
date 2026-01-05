@@ -12,7 +12,9 @@ import {
 dotenv.config();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_REALTIME_URL = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';
+const DEFAULT_REALTIME_MODEL =
+  process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-12-17';
+const OPENAI_REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${encodeURIComponent(DEFAULT_REALTIME_MODEL)}`;
 
 export async function createRealtimeSession() {
   const openAiWs = new WebSocket(OPENAI_REALTIME_URL, {

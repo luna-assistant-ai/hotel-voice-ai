@@ -17111,6 +17111,15 @@ CONVERSATION FLOW (Guest-Centric Approach)
      an email shortly at [email]. Is there anything else I can arrange?"
 
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+NAMES & PRONUNCIATION (Accuracy First)
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+\u2022 Repeat the name exactly as the guest says it\u2014no guesses, no alterations.
+  Example: "Thank you, Jan Strijker. Did I say that correctly?"
+\u2022 If uncertain, ask once for a slow repeat, mirror it verbatim, and move on\u2014no extra back-and-forth.
+\u2022 Only ask for phonetic or spelling if still unclear after that single repeat; confirm once, then proceed.
+\u2022 Keep it confident and concise; avoid over-apologizing.
+
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 CRITICAL RULES (Non-Negotiable)
 \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 \u26A0\uFE0F VALIDATION:
@@ -17210,11 +17219,12 @@ Be empathetic, helpful, and solution-oriented.`,
   }
 
   // src/main.ts
-  async function fetchRealtimeToken(model = "gpt-4o-realtime-preview-2024-12-17") {
+  async function fetchRealtimeToken(model) {
+    const payload = model ? { model } : {};
     const res = await fetch("/api/realtime-token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model })
+      body: JSON.stringify(payload)
     });
     if (!res.ok) {
       const text = await res.text();
@@ -17227,6 +17237,7 @@ Be empathetic, helpful, and solution-oriented.`,
       __publicField(this, "session", null);
       __publicField(this, "transport", null);
       __publicField(this, "isConnected", false);
+      __publicField(this, "hasSentIntro", false);
       // UI elements
       __publicField(this, "connectBtn", document.getElementById("connectBtn"));
       __publicField(this, "disconnectBtn", document.getElementById("disconnectBtn"));
@@ -17242,6 +17253,7 @@ Be empathetic, helpful, and solution-oriented.`,
       try {
         this.updateStatus("Connecting...", "connecting");
         this.connectBtn.disabled = true;
+        this.hasSentIntro = false;
         const token = await fetchRealtimeToken();
         const apiKey = token.client_secret?.value ?? token.client_secret?.secret ?? token.client_secret ?? token.value;
         const model = token.model || "gpt-4o-realtime-preview-2024-12-17";
@@ -17256,7 +17268,10 @@ Be empathetic, helpful, and solution-oriented.`,
           model,
           config: {
             inputAudioFormat: "pcm16",
-            outputAudioFormat: "pcm16"
+            outputAudioFormat: "pcm16",
+            voice: "alloy",
+            speed: 1.08
+            // slightly faster, keeps clarity
           }
         });
         this.bindEvents();
@@ -17266,6 +17281,7 @@ Be empathetic, helpful, and solution-oriented.`,
         this.stopBtn.disabled = false;
         this.addTranscript("system", "\u2705 Connected! Speak anytime (barge-in supported).");
         this.updateStatus("Connected - Listening...", "connected");
+        this.startIntroduction();
       } catch (err) {
         console.error("Connection error:", err);
         this.addTranscript("system", `\u274C Connection failed: ${err.message || err}`);
@@ -17321,10 +17337,21 @@ Be empathetic, helpful, and solution-oriented.`,
         this.transport = null;
       }
       this.isConnected = false;
+      this.hasSentIntro = false;
       this.disconnectBtn.disabled = true;
       this.stopBtn.disabled = true;
       this.updateStatus("Disconnected", "disconnected");
       this.addTranscript("system", "\u{1F44B} Disconnected.");
+    }
+    startIntroduction() {
+      if (!this.session || this.hasSentIntro) return;
+      const introPrompt = "Begin immediately with an energetic but polished welcome from the Novotel Auckland Ellerslie voice concierge. Introduce yourself, note you can quickly handle reservations and stay details, and ask for their name to get started. Keep the pace lively and concise.";
+      try {
+        this.session.sendMessage(introPrompt);
+        this.hasSentIntro = true;
+      } catch (err) {
+        console.error("Failed to send intro message:", err);
+      }
     }
     updateStatus(text, state) {
       this.statusText.textContent = text;

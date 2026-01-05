@@ -1,11 +1,12 @@
 import { RealtimeSession, OpenAIRealtimeWebRTC } from '@openai/agents-realtime';
 import { createSimpleConciergeAgent } from './agents.js';
 
-async function fetchRealtimeToken(model = 'gpt-4o-realtime-preview-2024-12-17') {
+async function fetchRealtimeToken(model?: string) {
+  const payload = model ? { model } : {};
   const res = await fetch('/api/realtime-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model })
+    body: JSON.stringify(payload)
   });
   if (!res.ok) {
     const text = await res.text();
@@ -18,6 +19,7 @@ class VoiceAgent {
   session: RealtimeSession | null = null;
   transport: OpenAIRealtimeWebRTC | null = null;
   isConnected = false;
+  hasSentIntro = false;
 
   // UI elements
   connectBtn = document.getElementById('connectBtn') as HTMLButtonElement;
@@ -37,6 +39,7 @@ class VoiceAgent {
     try {
       this.updateStatus('Connecting...', 'connecting');
       this.connectBtn.disabled = true;
+      this.hasSentIntro = false;
 
       const token = await fetchRealtimeToken();
       const apiKey =
@@ -62,6 +65,8 @@ class VoiceAgent {
         config: {
           inputAudioFormat: 'pcm16',
           outputAudioFormat: 'pcm16',
+          voice: 'alloy',
+          speed: 1.08, // slightly faster, keeps clarity
         },
       });
 
@@ -73,6 +78,7 @@ class VoiceAgent {
       this.stopBtn.disabled = false;
       this.addTranscript('system', '✅ Connected! Speak anytime (barge-in supported).');
       this.updateStatus('Connected - Listening...', 'connected');
+      this.startIntroduction();
     } catch (err: any) {
       console.error('Connection error:', err);
       this.addTranscript('system', `❌ Connection failed: ${err.message || err}`);
@@ -143,10 +149,25 @@ class VoiceAgent {
       this.transport = null;
     }
     this.isConnected = false;
+    this.hasSentIntro = false;
     this.disconnectBtn.disabled = true;
     this.stopBtn.disabled = true;
     this.updateStatus('Disconnected', 'disconnected');
     this.addTranscript('system', '👋 Disconnected.');
+  }
+
+  startIntroduction() {
+    if (!this.session || this.hasSentIntro) return;
+
+    const introPrompt =
+      'Begin immediately with an energetic but polished welcome from the Novotel Auckland Ellerslie voice concierge. Introduce yourself, note you can quickly handle reservations and stay details, and ask for their name to get started. Keep the pace lively and concise.';
+
+    try {
+      this.session.sendMessage(introPrompt);
+      this.hasSentIntro = true;
+    } catch (err) {
+      console.error('Failed to send intro message:', err);
+    }
   }
 
   updateStatus(text: string, state: string) {

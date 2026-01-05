@@ -1,0 +1,702 @@
+[
+  {
+    "website": "https://www.lakesideapartments.nz/",
+    "domain": "www.lakesideapartments.nz",
+    "tourism": "apartment",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://auraqueenstown.co.nz/stay-with-us/travellers-oasis/",
+    "domain": "auraqueenstown.co.nz",
+    "tourism": "apartment",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.airbnb.co.nz/rooms/17780954",
+    "domain": "www.airbnb.co.nz",
+    "tourism": "apartment",
+    "vendor": "OTA - Airbnb",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.hackfarm.co.nz/",
+    "domain": "www.hackfarm.co.nz",
+    "tourism": "apartment",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bowstreet.co.nz",
+    "domain": "www.bowstreet.co.nz",
+    "tourism": "apartment",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://nasebyhp.nz/",
+    "domain": "nasebyhp.nz",
+    "tourism": "camp_site",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.thisiswoodville.co.nz/pages/where-to-stay.php?cat_id=56",
+    "domain": "www.thisiswoodville.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.mawleypark.co.nz/",
+    "domain": "www.mawleypark.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Seekom",
+    "status": "ok"
+  },
+  {
+    "website": "https://pineglades.gonatural.co.nz",
+    "domain": "pineglades.gonatural.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.smithsfarm.co.nz/",
+    "domain": "www.smithsfarm.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Seekom",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bayofislandscampervanpark.co.nz/",
+    "domain": "www.bayofislandscampervanpark.co.nz",
+    "tourism": "caravan_site",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.kapiticoast.govt.nz/freedomcamping",
+    "domain": "www.kapiticoast.govt.nz",
+    "tourism": "caravan_site",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://v3au.zone-secure.net/drive/5063/312203/index-31.html#page=30",
+    "domain": "v3au.zone-secure.net",
+    "tourism": "caravan_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://sheepworld.wixsite.com/sheepworldcaravan",
+    "domain": "sheepworld.wixsite.com",
+    "tourism": "caravan_site",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://wellington.govt.nz/parking-roads-and-transport/parking/car-park-buildings-and-areas/waterfront-car-park-areas",
+    "domain": "wellington.govt.nz",
+    "tourism": "caravan_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.aucklandcouncil.govt.nz/parks-recreation/stay-at-park/Pages/accommodation-details.aspx?itemID=13",
+    "domain": "www.aucklandcouncil.govt.nz",
+    "tourism": "chalet",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://doc.govt.nz/link/c375710246a74753bd6c1295fe7dbb7b",
+    "domain": "doc.govt.nz",
+    "tourism": "chalet",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.pihasurf.co.nz/Caravan_Accommodation.html",
+    "domain": "www.pihasurf.co.nz",
+    "tourism": "chalet",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.ahu.co.nz/villas/",
+    "domain": "www.ahu.co.nz",
+    "tourism": "chalet",
+    "vendor": "Little Hotelier",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.oaktreehouse.co.nz/",
+    "domain": "www.oaktreehouse.co.nz",
+    "tourism": "chalet",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://oraretreat.com/",
+    "domain": "oraretreat.com",
+    "tourism": "guest_house",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bonmarie.co.nz/",
+    "domain": "www.bonmarie.co.nz",
+    "tourism": "guest_house",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://moongatevilla.com",
+    "domain": "moongatevilla.com",
+    "tourism": "guest_house",
+    "vendor": "SiteMinder / TheBookingButton",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.geyserlookout.co.nz",
+    "domain": "www.geyserlookout.co.nz",
+    "tourism": "guest_house",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.facebook.com/groups/5036943353003677/",
+    "domain": "www.facebook.com",
+    "tourism": "guest_house",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "http://hanmerbackpackers.co.nz/",
+    "domain": "hanmerbackpackers.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://haastbackpackers.co.nz/",
+    "domain": "haastbackpackers.co.nz",
+    "tourism": "hostel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.timbertrailhub.co.nz/",
+    "domain": "www.timbertrailhub.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.stewartislandbackpackers.co.nz/",
+    "domain": "www.stewartislandbackpackers.co.nz",
+    "tourism": "hostel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://kiwihouse.co.nz/",
+    "domain": "kiwihouse.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://chifley-suites.besthotelsauckland.com/",
+    "domain": "chifley-suites.besthotelsauckland.com",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://ramadaqueenstowncentral.co.nz/",
+    "domain": "ramadaqueenstowncentral.co.nz",
+    "tourism": "hotel",
+    "vendor": "OTA - Expedia/Hotels.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.millenniumhotels.com/en/dunedin/kingsgate-hotel-dunedin",
+    "domain": "www.millenniumhotels.com",
+    "tourism": "hotel",
+    "vendor": "OTA - Expedia/Hotels.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.shepherds.co.nz",
+    "domain": "www.shepherds.co.nz",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "http://rivertonbedandbreakfast.co.nz",
+    "domain": "rivertonbedandbreakfast.co.nz",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.seaviewmotel.co.nz/home",
+    "domain": "www.seaviewmotel.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.bellavista.co.nz/",
+    "domain": "www.bellavista.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.kapitimotel.com/",
+    "domain": "www.kapitimotel.com",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.ilammotel.co.nz/",
+    "domain": "www.ilammotel.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.hanmer.com/",
+    "domain": "www.hanmer.com",
+    "tourism": "motel",
+    "vendor": "SiteMinder / TheBookingButton",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.highcountrylodge.co.nz/",
+    "domain": "www.highcountrylodge.co.nz",
+    "tourism": "motel; hostel",
+    "vendor": "SiteMinder / TheBookingButton",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.marietherese.co.nz",
+    "domain": "www.marietherese.co.nz",
+    "tourism": "chalet",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.capitalview.nz/",
+    "domain": "www.capitalview.nz",
+    "tourism": "hotel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.springhillgardens.co.nz/",
+    "domain": "www.springhillgardens.co.nz",
+    "tourism": "guest_house",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.cashelcourtmotel.co.nz/",
+    "domain": "www.cashelcourtmotel.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.heriotlane.com",
+    "domain": "www.heriotlane.com",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.jadecourt.co.nz/",
+    "domain": "www.jadecourt.co.nz",
+    "tourism": "motel",
+    "vendor": "STAAH",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.milfordlodge.com/stay/rainforest-campervan-park/",
+    "domain": "www.milfordlodge.com",
+    "tourism": "caravan_site",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://staysouth.com/accommodation/lakeridge-queenstown",
+    "domain": "staysouth.com",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://lakesedgeholidaypark.co.nz/",
+    "domain": "lakesedgeholidaypark.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "http://stayinkaikoura.co.nz/",
+    "domain": "stayinkaikoura.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://haastrivermotels.co.nz/",
+    "domain": "haastrivermotels.co.nz",
+    "tourism": "camp_site",
+    "vendor": "RMS IBE",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bayofislandsholidaypark.co.nz/",
+    "domain": "www.bayofislandsholidaypark.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Newbook",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.accommodationabeltasman.co.nz/",
+    "domain": "www.accommodationabeltasman.co.nz",
+    "tourism": "hotel",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.hihibeachholidaypark.nz/",
+    "domain": "www.hihibeachholidaypark.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bealeyquarter.co.nz/stay/the-studios/",
+    "domain": "www.bealeyquarter.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "http://www.opononihotel.com/index.html",
+    "domain": "www.opononihotel.com",
+    "tourism": "hotel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.alpine-pacific.co.nz/",
+    "domain": "www.alpine-pacific.co.nz",
+    "tourism": "caravan_site",
+    "vendor": "Seekom",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.cartersbeach.nz/",
+    "domain": "www.cartersbeach.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.arcadianelson.co.nz",
+    "domain": "www.arcadianelson.co.nz",
+    "tourism": "motel",
+    "vendor": "SiteMinder / TheBookingButton",
+    "status": "ok"
+  },
+  {
+    "website": "http://lakehaweahostel.co.nz",
+    "domain": "lakehaweahostel.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "http://bluewaterlodge.co.nz/",
+    "domain": "bluewaterlodge.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.aucklandliving.co.nz",
+    "domain": "www.aucklandliving.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://amross.nz/",
+    "domain": "amross.nz",
+    "tourism": "motel",
+    "vendor": "STAAH",
+    "status": "ok"
+  },
+  {
+    "website": "https://settlerscottagemotel.co.nz/",
+    "domain": "settlerscottagemotel.co.nz",
+    "tourism": "motel",
+    "vendor": "STAAH",
+    "status": "ok"
+  },
+  {
+    "website": "https://theprospect.co.nz/",
+    "domain": "theprospect.co.nz",
+    "tourism": "hotel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "http://annabellecourtmotel.co.nz/",
+    "domain": "annabellecourtmotel.co.nz",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.aalton.co.nz/",
+    "domain": "www.aalton.co.nz",
+    "tourism": "motel",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.northcotemotorlodge.co.nz/",
+    "domain": "www.northcotemotorlodge.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://mayfairluxuryhotels.com/",
+    "domain": "mayfairluxuryhotels.com",
+    "tourism": "hotel",
+    "vendor": "Mews",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.belmontmotorinn.co.nz/",
+    "domain": "www.belmontmotorinn.co.nz",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.tatahilodge.co.nz",
+    "domain": "www.tatahilodge.co.nz",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.harcourtholidaypark.co.nz/",
+    "domain": "www.harcourtholidaypark.co.nz",
+    "tourism": "camp_site",
+    "vendor": "SynXis/Sabre",
+    "status": "ok"
+  },
+  {
+    "website": "http://bushlands.co.nz",
+    "domain": "bushlands.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://whangamomonahotel.co.nz/",
+    "domain": "whangamomonahotel.co.nz",
+    "tourism": "hotel",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://pakuranga.co.nz",
+    "domain": "pakuranga.co.nz",
+    "tourism": "motel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.urbanrooms.co.nz/",
+    "domain": "www.urbanrooms.co.nz",
+    "tourism": "apartment",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.micamp.co.nz/lake-taupo.html",
+    "domain": "www.micamp.co.nz",
+    "tourism": "camp_site",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.lionsdenhostel.co.nz/",
+    "domain": "www.lionsdenhostel.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://pictonholidaypark.co.nz",
+    "domain": "pictonholidaypark.co.nz",
+    "tourism": "caravan_site",
+    "vendor": "Seekom",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.lylo.com/auckland/",
+    "domain": "www.lylo.com",
+    "tourism": "hostel",
+    "vendor": "SynXis/Sabre",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.opalhotsprings.co.nz/",
+    "domain": "www.opalhotsprings.co.nz",
+    "tourism": "camp_site",
+    "vendor": "Newbook",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.58oncron.co.nz/",
+    "domain": "www.58oncron.co.nz",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "http://www.bbh.co.nz/hd64/Karibu-Backpackers-in-Whakatane-New-Zealand.html",
+    "domain": "www.bbh.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://riverheadvilla.nz/",
+    "domain": "riverheadvilla.nz",
+    "tourism": "guest_house",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.gw.govt.nz/parks/battle-hill-farm-forest-park/",
+    "domain": "www.gw.govt.nz",
+    "tourism": "camp_site",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://esplanade.co.nz",
+    "domain": "esplanade.co.nz",
+    "tourism": "apartment",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.pullmanaucklandairport.com/",
+    "domain": "www.pullmanaucklandairport.com",
+    "tourism": "hotel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.honeheke.co.nz/",
+    "domain": "www.honeheke.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.ikamatuahotel.co.nz/",
+    "domain": "www.ikamatuahotel.co.nz",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.thomascatlins.co.nz/",
+    "domain": "www.thomascatlins.co.nz",
+    "tourism": "hostel",
+    "vendor": "SiteMinder / TheBookingButton",
+    "status": "ok"
+  },
+  {
+    "website": "https://bsh.nz",
+    "domain": "bsh.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.bemyguestwaiheke.co.nz/holiday-homes/island-waiheke/church-bay/puriri-valley",
+    "domain": "www.bemyguestwaiheke.co.nz",
+    "tourism": "guest_house",
+    "vendor": "Unknown",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.yha.co.nz/hostels/south-island-hostels/yha-mt-cook",
+    "domain": "www.yha.co.nz",
+    "tourism": "hostel",
+    "vendor": "Unknown",
+    "status": "fetch_failed"
+  },
+  {
+    "website": "https://www.beachfrontnapier.co.nz/",
+    "domain": "www.beachfrontnapier.co.nz",
+    "tourism": "motel",
+    "vendor": "STAAH",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.haastlodge.com/",
+    "domain": "www.haastlodge.com",
+    "tourism": "motel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://ballinamotel.co.nz/",
+    "domain": "ballinamotel.co.nz",
+    "tourism": "motel",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.edgewatermotel.co.nz/",
+    "domain": "www.edgewatermotel.co.nz",
+    "tourism": "motel",
+    "vendor": "OTA - Booking.com",
+    "status": "ok"
+  },
+  {
+    "website": "https://atlantishostel.co.nz/",
+    "domain": "atlantishostel.co.nz",
+    "tourism": "hostel",
+    "vendor": "On-site / custom booking",
+    "status": "ok"
+  },
+  {
+    "website": "https://www.thehotelnelson.co.nz",
+    "domain": "www.thehotelnelson.co.nz",
+    "tourism": "hotel",
+    "vendor": "Unknown",
+    "status": "ok"
+  }
+]

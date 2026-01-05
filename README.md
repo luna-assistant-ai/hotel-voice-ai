@@ -80,10 +80,11 @@ Create a `.env` file:
 cp .env.example .env
 ```
 
-Edit `.env` and add your OpenAI API key:
+Edit `.env` and add your OpenAI API key (and optional realtime model override):
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_REALTIME_MODEL=gpt-realtime-2025-08-28
 PORT=3000
 HOTEL_NAME=Novotel Auckland Ellerslie
 HOTEL_ADDRESS=72-112 Greenlane Road East, Ellerslie, Auckland 1051

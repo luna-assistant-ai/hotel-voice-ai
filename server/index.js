@@ -28,6 +28,8 @@ if (!existsSync(LOG_DIR)) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DEFAULT_REALTIME_MODEL =
+  process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview-2024-12-17';
 
 // Middleware
 app.use(cors());
@@ -46,7 +48,7 @@ app.post('/api/realtime-token', async (req, res) => {
       return res.status(500).json({ error: 'Missing OPENAI_API_KEY on server' });
     }
 
-    const model = req.body?.model || 'gpt-4o-realtime-preview-2024-12-17';
+    const model = req.body?.model || DEFAULT_REALTIME_MODEL;
     // Use client secret endpoint to get an ephemeral key for browser WebRTC
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
