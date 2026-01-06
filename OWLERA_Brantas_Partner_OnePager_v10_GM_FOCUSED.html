@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OWLERA – Brantas Partner One‑Pager</title>
+
+<style>
+  @page { size: A4; margin: 14mm; }
+  @media print {
+    html, body { background: #fff !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { box-shadow: none !important; border: none !important; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  :root{
+    --ink:#0f2332;
+    --muted:#6b7280;
+    --rule:#e5e7eb;
+    --gold:#c9a961;
+    --gold-pale:#faf8f3;
+    --panel:#fafafa;
+  }
+
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:#f8f9fa;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .page{
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background:#fff;
+    box-sizing:border-box;
+    padding: 14mm;
+    border: 1px solid var(--rule);
+    box-shadow: 0 18px 60px rgba(15,35,50,.06);
+    display:flex;
+    flex-direction:column;
+    gap: 10mm;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:8mm;
+    border-bottom:1.5px solid var(--rule);
+  }
+
+  .brand{ display:flex; flex-direction:column; gap:6px; }
+  .brand h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing: .20em;
+    text-transform:uppercase;
+    font-weight:900;
+  }
+  .brand .tag{
+    margin:0;
+    font-size:12px;
+    color:var(--muted);
+    max-width: 108mm;
+    line-height:1.45;
+  }
+  .pill{
+    border:1.5px solid var(--gold);
+    background:var(--gold-pale);
+    padding:7px 12px;
+    border-radius:999px;
+    font-size:11px;
+    color:var(--ink);
+    white-space:nowrap;
+    font-weight:700;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 10mm;
+  }
+
+  .hero .kicker{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 3mm 0;
+    font-weight:700;
+  }
+  .hero .big{
+    margin:0;
+    font-size:56px;
+    line-height:0.92;
+    font-weight:900;
+    letter-spacing:-.04em;
+  }
+  .hero .big .gold{ color:var(--gold); display:block; }
+  .hero .sub{
+    margin:4mm 0 0 0;
+    font-size:13px;
+    line-height:1.55;
+    max-width: 118mm;
+  }
+  .hero .sub b{ font-weight:800; }
+  .muted{ color:var(--muted); }
+
+  .card{
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding: 6.5mm;
+    background:#fff;
+  }
+  .card h2{
+    margin:0 0 3.5mm 0;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:900;
+  }
+  .line{
+    height:1px;
+    background:var(--rule);
+    margin: 4.5mm 0;
+  }
+
+  .bullets{
+    margin:0;
+    padding-left: 16px;
+  }
+  .bullets li{
+    margin: 0 0 2.6mm 0;
+    line-height:1.45;
+    font-size:12px;
+  }
+  .bullets li span{
+    color:var(--muted);
+    font-size:11px;
+  }
+  .bullets li b{ font-weight:800; }
+
+  .right .card + .card{ margin-top: 6mm; }
+
+  .pricing{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4.5mm;
+  }
+  .plan{
+    border:1px solid var(--rule);
+    border-radius:10px;
+    padding: 5mm;
+    background:var(--panel);
+  }
+  .plan .name{
+    font-weight:900;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-size:10px;
+    color:var(--muted);
+    margin:0 0 2mm 0;
+  }
+  .plan .price{
+    margin:0 0 2.5mm 0;
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:-.02em;
+  }
+  .plan .cap{
+    margin:0;
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.45;
+  }
+  .plan .cap b{ color:var(--ink); font-weight:800; }
+
+  .metric{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+    padding:3.5mm 0;
+  }
+  .metric .value{
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:-.02em;
+    color:var(--gold);
+  }
+  .metric .label{
+    font-size:11px;
+    color:var(--muted);
+    text-align:right;
+    line-height:1.35;
+  }
+
+  .note{
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.45;
+    margin-top: 3mm;
+  }
+
+  .problem-solution{
+    border:1px solid var(--gold);
+    background: linear-gradient(135deg, #fffef9 0%, #fff 100%);
+    border-radius:12px;
+    padding: 6.5mm;
+  }
+  .problem-solution h3{
+    margin:0 0 3mm 0;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:900;
+  }
+  .problem-solution .split{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:5mm;
+  }
+  .problem-solution .side h4{
+    margin:0 0 2.5mm 0;
+    font-size:13px;
+    font-weight:900;
+    color:var(--ink);
+  }
+  .problem-solution .side p{
+    margin:0 0 2.5mm 0;
+    font-size:11.5px;
+    line-height:1.45;
+    color:var(--ink);
+  }
+  .problem-solution .side p:last-child{ margin-bottom:0; }
+
+  .why-different{
+    border:1.5px dashed rgba(201,169,97,.55);
+    background: #fffdf8;
+    border-radius:12px;
+    padding: 6.5mm;
+  }
+  .why-different h3{
+    margin:0 0 4mm 0;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:900;
+  }
+  .why-different .row{
+    display:flex;
+    justify-content:space-between;
+    gap:8mm;
+    margin-bottom:4mm;
+  }
+  .why-different .row:last-child{ margin-bottom:0; }
+  .why-different .item{
+    flex:1;
+    min-width:0;
+  }
+  .why-different .item .title{
+    font-size:11px;
+    font-weight:900;
+    color:var(--gold);
+    margin:0 0 1.5mm 0;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .why-different .item .desc{
+    margin:0;
+    font-size:11px;
+    color:var(--ink);
+    line-height:1.4;
+  }
+
+  .sources{
+    margin:4mm 0 0 0;
+    font-size:9px;
+    color:var(--muted);
+    line-height:1.35;
+    font-style:italic;
+  }
+
+  .footer{
+    margin-top:auto;
+    border-top:1.5px solid var(--rule);
+    padding-top:6mm;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+  }
+  .cta{
+    font-size:12.5px;
+    line-height:1.45;
+    max-width: 128mm;
+  }
+  .cta b{ font-weight:900; }
+  .contact{
+    text-align:right;
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.5;
+    white-space:nowrap;
+  }
+  .contact b{ color:var(--ink); font-weight:800; }
+</style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <h1>OWLERA</h1>
+        <p class="tag">
+          Voice AI that captures after-hours bookings and overflow calls—so your hotel never misses revenue while your team sleeps or handles check-ins.
+        </p>
+      </div>
+      <div class="pill">Partner One‑Pager · Brantas</div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <section class="hero">
+          <p class="kicker">Partner revenue share</p>
+          <h2 class="big"><span class="gold">20%</span> recurring</h2>
+          <p class="sub">
+            Brantas receives <b>20% of net platform revenue</b> from every active property introduced,
+            paid monthly. <span class="muted">Portfolio terms available for multi‑property groups.</span>
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <!-- THE PROBLEM/SOLUTION (Focus on GM pain points) -->
+        <section class="problem-solution">
+          <h3>The problem OWLERA solves</h3>
+          <div class="split">
+            <div class="side">
+              <h4>❌ Without OWLERA</h4>
+              <p><b>2 AM caller</b> looking to book 5 nights gets voicemail → books on Booking.com instead</p>
+              <p><b>Check-in rush</b>: 3 guests waiting, phone rings with reservation question → caller hangs up, calls competitor</p>
+              <p><b>Staff shortage</b>: Can't hire night coverage for 10-15 calls → miss $15K-$20K/month in direct bookings</p>
+            </div>
+            <div class="side">
+              <h4>✅ With OWLERA</h4>
+              <p><b>2 AM caller</b> gets instant answer, books directly, confirmation email sent → hotel keeps 100% commission</p>
+              <p><b>Check-in rush</b>: OWLERA handles reservation calls, front desk focuses on in-person guests → no more missed calls</p>
+              <p><b>Staff shortage</b>: Voice AI covers gaps 24/7 → capture revenue without hiring night staff</p>
+            </div>
+          </div>
+          <p class="sources">
+            Industry data: voice channel averages $1,570/booking (highest of all channels) · 50% of lead calls don't convert on first attempt → recovery opportunity (Revinate 2024, 4.6M calls analyzed)
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <!-- WHY DIFFERENT (Competitive positioning) -->
+        <section class="why-different">
+          <h3>Why OWLERA is different (vs chatbots, in-room AI, enterprise voice)</h3>
+
+          <div class="row">
+            <div class="item">
+              <p class="title">1. Voice, not text</p>
+              <p class="desc">Phone callers want to <b>talk</b>, not type. OWLERA handles complex conversations (group bookings, special requests, modifications)—not just FAQs.</p>
+            </div>
+            <div class="item">
+              <p class="title">2. Revenue-first</p>
+              <p class="desc">Built for <b>bookings</b>, not in-room services. Captures pre-arrival revenue that in-room AI (Volara, Alexa) can't touch.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="item">
+              <p class="title">3. Fast deployment</p>
+              <p class="desc"><b>4 weeks to operational</b> vs 6-12 months for enterprise solutions (PolyAI). Pilot in 60 days, not 6 months.</p>
+            </div>
+            <div class="item">
+              <p class="title">4. Mid-market friendly</p>
+              <p class="desc">Priced for 50-300 room properties ($199-$499/mo + commission). No enterprise minimums. Month-to-month after pilot.</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="item">
+              <p class="title">5. Staff augmentation</p>
+              <p class="desc">Helps your team, doesn't replace them. Handles overflow/after-hours so staff can focus on high-touch guest experiences.</p>
+            </div>
+            <div class="item">
+              <p class="title">6. Risk-free pilot</p>
+              <p class="desc">60-day trial. If performance targets aren't met, <b>platform fee waived</b>—hotel only pays commission on bookings generated.</p>
+            </div>
+          </div>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <section class="card">
+          <h2>60‑Day pilot (what GMs care about)</h2>
+          <ul class="bullets">
+            <li><b>Does it actually book?</b> Average booking value meets or exceeds your historical phone channel performance</li>
+            <li><b>Does it answer calls?</b> ≥95% answered rate during agreed hours (after-hours or overflow)</li>
+            <li><b>Is it safe?</b> Zero critical errors (no double bookings, no PMS corruption)</li>
+            <li><b>Do guests like it?</b> Quality score on call recordings (compliance, accuracy, resolution)</li>
+          </ul>
+          <p class="note">
+            <b>Pilot guarantee:</b> if targets aren't met, platform fee waived. You only pay commission on revenue generated.
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <section class="card">
+          <h2>Hotel‑facing pricing (simple + capped)</h2>
+          <div class="pricing">
+            <div class="plan">
+              <p class="name">Partial Intelligence</p>
+              <p class="price">$199/mo + 7%</p>
+              <p class="cap">After‑hours + overflow<br/>Monthly max: <b>$1,699</b></p>
+            </div>
+            <div class="plan">
+              <p class="name">Full Intelligence</p>
+              <p class="price">$499/mo + 5%</p>
+              <p class="cap">24/7 coverage<br/>Monthly max: <b>$2,999</b></p>
+            </div>
+          </div>
+          <p class="note">Most start with Partial (after-hours only) then expand to Full after seeing results. No long-term contracts.</p>
+        </section>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="right">
+        <section class="card">
+          <h2>What OWLERA does (the basics)</h2>
+          <ul class="bullets">
+            <li><b>Answers calls 24/7</b> or during specified hours <span>(after-hours, overflow, or full coverage)</span></li>
+            <li><b>Books reservations</b> directly into your PMS <span>(check availability, quote rates, secure payment, send confirmation)</span></li>
+            <li><b>Handles modifications & cancellations</b> <span>(change dates, room type, guest count)</span></li>
+            <li><b>Answers common questions</b> <span>(policies, amenities, directions, check-in times)</span></li>
+            <li><b>Escalates when needed</b> <span>(transfers to staff for complex VIP requests)</span></li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Implementation (4 weeks)</h2>
+          <ul class="bullets">
+            <li><b>Week 1-2:</b> Integration <span>(phone routing, PMS connection, brand voice setup)</span></li>
+            <li><b>Week 3:</b> Testing <span>(staff orientation, refine scripts)</span></li>
+            <li><b>Week 4:</b> Soft launch <span>(after-hours only, monitored)</span></li>
+            <li><b>60-day pilot:</b> Full measurement period</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Who it fits</h2>
+          <ul class="bullets">
+            <li><b>After-hours gap:</b> No night staff, missing 2 AM bookings to OTAs</li>
+            <li><b>Overflow problem:</b> Check-in rush means missed calls during day</li>
+            <li><b>Direct booking push:</b> Want to compete with Booking.com 24/7 availability</li>
+            <li><b>Staff shortage:</b> Can't hire/afford full-time reservation coverage</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Responsibilities</h2>
+          <ul class="bullets">
+            <li><b>Brantas:</b> introductions · relationships · pipeline</li>
+            <li><b>OWLERA:</b> platform · integration · operations · reporting</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Partner revenue examples</h2>
+
+          <div style="margin-bottom:4mm;">
+            <p style="margin:0 0 2mm 0; font-size:10px; color:var(--muted); font-weight:700;">Conservative (30 properties)</p>
+            <div class="metric" style="padding:2mm 0;">
+              <div class="label">Avg $449/mo × 20%</div>
+              <div class="value" style="font-size:20px;">$2,694/mo</div>
+            </div>
+          </div>
+
+          <div style="padding-top:3mm; border-top:1px solid var(--rule);">
+            <p style="margin:0 0 2mm 0; font-size:10px; color:var(--muted); font-weight:700;">Ambitious (50 properties)</p>
+            <div class="metric" style="padding:2mm 0;">
+              <div class="label">Mixed avg $550/mo × 20%</div>
+              <div class="value">$5,500/mo</div>
+            </div>
+          </div>
+
+          <p class="note">
+            Recurring monthly. Portfolio pricing available for multi-property groups.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="cta">
+        <b>Next step:</b> nominate 1 pilot property. OWLERA runs Partial Intelligence (after-hours) for 60 days.
+        Joint review → continue, expand, or conclude. Zero risk.
+      </div>
+      <div class="contact">
+        <b>Joffrey Costello · OWLERA</b><br/>
+        joffrey@costegief.com<br/>
+        Auckland, New Zealand
+      </div>
+    </div>
+  </div>
+</body>
+</html>

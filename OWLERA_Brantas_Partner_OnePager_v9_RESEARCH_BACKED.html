@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OWLERA – Brantas Partner One‑Pager (Research-Backed Edition)</title>
+
+<style>
+  /* Print: Safari-friendly (no fixed-height pages, no absolute footer) */
+  @page { size: A4; margin: 14mm; }
+  @media print {
+    html, body { background: #fff !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page { box-shadow: none !important; border: none !important; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  :root{
+    --ink:#0f2332;
+    --muted:#6b7280;
+    --rule:#e5e7eb;
+    --gold:#c9a961;
+    --gold-pale:#faf8f3;
+    --panel:#fafafa;
+  }
+
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:#f8f9fa;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .page{
+    width: 210mm;
+    min-height: 297mm;           /* min-height avoids clipping in Safari print */
+    margin: 0 auto;
+    background:#fff;
+    box-sizing:border-box;
+    padding: 14mm;
+    border: 1px solid var(--rule);
+    box-shadow: 0 18px 60px rgba(15,35,50,.06);
+    display:flex;
+    flex-direction:column;       /* footer sits naturally at bottom */
+    gap: 10mm;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:8mm;
+    border-bottom:1.5px solid var(--rule);
+  }
+
+  .brand{ display:flex; flex-direction:column; gap:6px; }
+  .brand h1{
+    margin:0;
+    font-size:20px;
+    letter-spacing: .20em;
+    text-transform:uppercase;
+    font-weight:900;
+  }
+  .brand .tag{
+    margin:0;
+    font-size:12px;
+    color:var(--muted);
+    max-width: 108mm;
+    line-height:1.45;
+  }
+  .pill{
+    border:1.5px solid var(--gold);
+    background:var(--gold-pale);
+    padding:7px 12px;
+    border-radius:999px;
+    font-size:11px;
+    color:var(--ink);
+    white-space:nowrap;
+    font-weight:700;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 10mm;
+  }
+
+  .hero .kicker{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 3mm 0;
+    font-weight:700;
+  }
+  .hero .big{
+    margin:0;
+    font-size:56px;              /* safer for Safari print than 72px */
+    line-height:0.92;
+    font-weight:900;
+    letter-spacing:-.04em;
+  }
+  .hero .big .gold{ color:var(--gold); display:block; }
+  .hero .sub{
+    margin:4mm 0 0 0;
+    font-size:13px;
+    line-height:1.55;
+    max-width: 118mm;
+  }
+  .hero .sub b{ font-weight:800; }
+  .muted{ color:var(--muted); }
+
+  .card{
+    border:1px solid var(--rule);
+    border-radius:12px;
+    padding: 6.5mm;
+    background:#fff;
+  }
+  .card h2{
+    margin:0 0 3.5mm 0;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:900;
+  }
+  .line{
+    height:1px;
+    background:var(--rule);
+    margin: 4.5mm 0;
+  }
+
+  .bullets{
+    margin:0;
+    padding-left: 16px;
+  }
+  .bullets li{
+    margin: 0 0 2.6mm 0;
+    line-height:1.45;
+    font-size:12px;
+  }
+  .bullets li span{
+    color:var(--muted);
+    font-size:11px;
+  }
+  .bullets li b{ font-weight:800; }
+
+  .right .card + .card{ margin-top: 6mm; }
+
+  .pricing{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4.5mm;
+  }
+  .plan{
+    border:1px solid var(--rule);
+    border-radius:10px;
+    padding: 5mm;
+    background:var(--panel);
+  }
+  .plan .name{
+    font-weight:900;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-size:10px;
+    color:var(--muted);
+    margin:0 0 2mm 0;
+  }
+  .plan .price{
+    margin:0 0 2.5mm 0;
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:-.02em;
+  }
+  .plan .cap{
+    margin:0;
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.45;
+  }
+  .plan .cap b{ color:var(--ink); font-weight:800; }
+
+  .metric{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+    padding:3.5mm 0;
+  }
+  .metric .value{
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:-.02em;
+    color:var(--gold);
+  }
+  .metric .label{
+    font-size:11px;
+    color:var(--muted);
+    text-align:right;
+    line-height:1.35;
+  }
+
+  .note{
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.45;
+    margin-top: 3mm;
+  }
+
+  .evidence{
+    border:1px dashed rgba(201,169,97,.55);
+    background: #fffdf8;
+    border-radius:12px;
+    padding: 6.5mm;
+  }
+  .evidence h3{
+    margin:0 0 3mm 0;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:900;
+  }
+  .evidence .row{
+    display:flex;
+    justify-content:space-between;
+    gap:10mm;
+  }
+  .evidence .stat{
+    flex:1;
+    min-width:0;
+  }
+  .evidence .stat .num{
+    font-size:22px;
+    font-weight:950;
+    letter-spacing:-.02em;
+    color:var(--ink);
+    margin:0;
+  }
+  .evidence .stat .desc{
+    margin:1.5mm 0 0 0;
+    font-size:10.5px;
+    color:var(--muted);
+    line-height:1.35;
+  }
+  .sources{
+    margin:4mm 0 0 0;
+    font-size:9.5px;
+    color:var(--muted);
+    line-height:1.35;
+  }
+  .sources b{ color:var(--ink); font-weight:800; }
+
+  .footer{
+    margin-top:auto;
+    border-top:1.5px solid var(--rule);
+    padding-top:6mm;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:16px;
+  }
+  .cta{
+    font-size:12.5px;
+    line-height:1.45;
+    max-width: 128mm;
+  }
+  .cta b{ font-weight:900; }
+  .contact{
+    text-align:right;
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.5;
+    white-space:nowrap;
+  }
+  .contact b{ color:var(--ink); font-weight:800; }
+</style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">
+        <h1>OWLERA</h1>
+        <p class="tag">
+          Conversation Intelligence for the hotel industry — automation that protects revenue, improves guest experience, and proves impact.
+          <b style="display:block; margin-top:3mm; color:var(--gold);">
+            Built on 17 industry research studies (J.D. Power, Revinate, h2c AI, State of Guest Tech 2024-25)
+          </b>
+        </p>
+      </div>
+      <div class="pill">Partner One‑Pager · Brantas</div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div>
+        <section class="hero">
+          <p class="kicker">Partner revenue share</p>
+          <h2 class="big"><span class="gold">20%</span> recurring</h2>
+          <p class="sub">
+            Brantas receives <b>20% of net platform revenue</b> from every active property introduced,
+            paid monthly. <span class="muted">Portfolio terms available for multi‑property groups.</span>
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <section class="evidence">
+          <h3>Why voice still matters (evidence from 4.6M+ calls)</h3>
+          <div class="row">
+            <div class="stat">
+              <p class="num">$1,570</p>
+              <p class="desc">Average booking value on the <b>voice channel</b> — highest of all channels.</p>
+            </div>
+            <div class="stat">
+              <p class="num">26.9</p>
+              <p class="desc">Average inbound calls per room per month — useful for staffing & coverage planning.</p>
+            </div>
+            <div class="stat">
+              <p class="num">49.9%</p>
+              <p class="desc">Industry conversion rate of lead calls; top performers exceed 60%.</p>
+            </div>
+          </div>
+
+          <!-- NEW ROW: Additional Research Stats -->
+          <div class="row" style="margin-top:4.5mm; padding-top:4.5mm; border-top:1px dashed rgba(201,169,97,.25);">
+            <div class="stat">
+              <p class="num">58%</p>
+              <p class="desc">Hotels now use AI (up from 23% in 2023) — <b>you're in the majority</b>, not early adopter.</p>
+            </div>
+            <div class="stat">
+              <p class="num">+68pts</p>
+              <p class="desc">Satisfaction boost when tech adoption done right (mobile app users).</p>
+            </div>
+            <div class="stat">
+              <p class="num">70%</p>
+              <p class="desc">Guests find chatbots helpful; voice AI is even more natural for complex bookings.</p>
+            </div>
+          </div>
+
+          <p class="sources">
+            Sources: <b>Revinate 2024 (4.6M calls)</b> · <b>J.D. Power 2025 (39K guests)</b> · <b>h2c AI Study 2025</b> · <b>State of Guest Tech 2024-25</b>.
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <!-- NEW SECTION: Opportunity Cost -->
+        <section class="card" style="background:linear-gradient(135deg, #fff 0%, #fffef9 100%); border-color:var(--gold);">
+          <h2>Cost of missing calls (conservative estimate)</h2>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:5mm;">
+            <div>
+              <p style="margin:0; font-size:11px; color:var(--muted); margin-bottom:2mm;">100-room property</p>
+              <div class="metric" style="padding:0; border-top:1px solid var(--rule); padding-top:3mm;">
+                <div class="label">5.1 lead calls/room/mo<br/>× 100 rooms</div>
+                <div class="value" style="font-size:20px;">510</div>
+              </div>
+              <p style="margin:2mm 0 0 0; font-size:10px; color:var(--muted);">High-intent calls monthly</p>
+            </div>
+            <div>
+              <p style="margin:0; font-size:11px; color:var(--muted); margin-bottom:2mm;">If you miss just 10%</p>
+              <div class="metric" style="padding:0; border-top:1px solid var(--rule); padding-top:3mm;">
+                <div class="label">51 calls × 50% conversion<br/>× $1,570 avg value</div>
+                <div class="value" style="font-size:20px; color:#dc2626;">−$40K</div>
+              </div>
+              <p style="margin:2mm 0 0 0; font-size:10px; color:var(--muted);"><b>Lost revenue per month</b></p>
+            </div>
+          </div>
+          <p class="note" style="margin-top:4mm; background:var(--gold-pale); padding:3mm; border-radius:6px;">
+            <b>OWLERA Partial ($199/mo + 7%) = $1,699 max/mo</b> vs $40,000 in lost bookings.
+            Even capturing 5% of missed calls pays for itself 10×.
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <section class="card">
+          <h2>60‑Day risk‑free pilot (clear, auditable outcomes)</h2>
+          <ul class="bullets">
+            <li><b>Revenue effectiveness:</b> average booking value per answered reservation call meets or exceeds
+              the property's historical direct-call benchmark
+              <span>(measured during pilot coverage hours; varies by conversation model)</span></li>
+            <li><b>Coverage quality:</b> ≥95% answered calls during agreed hours <span>(excluding spam / wrong numbers)</span></li>
+            <li><b>Operational safety:</b> zero critical incidents <span>(no double bookings, no PMS corruption, no payment errors)</span></li>
+            <li><b>Quality score:</b> target met on OWLERA's call QA rubric <span>(scored on compliance, accuracy, resolution)</span></li>
+          </ul>
+          <div class="line"></div>
+          <ul class="bullets">
+            <li><b>Pilot guarantee:</b> if criteria aren't met, <b>platform fee is waived</b>. Hotel only pays <b>commission on bookings generated</b>.</li>
+          </ul>
+          <p class="note">
+            Industry benchmarks show 50% of high-intent callers don't convert on first call (Revinate 2024). After-hours and overflow calls represent significant revenue leakage.
+          </p>
+        </section>
+
+        <div style="height:6mm"></div>
+
+        <section class="card">
+          <h2>Hotel‑facing pricing (simple + capped)</h2>
+          <div class="pricing">
+            <div class="plan">
+              <p class="name">Partial Intelligence</p>
+              <p class="price">$199/mo + 7%</p>
+              <p class="cap">After‑hours + overflow<br/>Monthly max: <b>$1,699</b></p>
+            </div>
+            <div class="plan">
+              <p class="name">Full Intelligence</p>
+              <p class="price">$499/mo + 5%</p>
+              <p class="cap">24/7 coverage + reputation shield<br/>Monthly max: <b>$2,999</b></p>
+            </div>
+          </div>
+          <p class="note">Commission caps at $1,500 (Partial) and $2,500 (Full). Month-to-month after pilot.</p>
+        </section>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="right">
+        <section class="card">
+          <h2>What OWLERA does</h2>
+          <ul class="bullets">
+            <li><b>Manages reservation conversations</b> across the hotel's existing booking systems
+              <span>(Partial or Full coverage — after‑hours, overflow, or 24/7 — aligned with hotel policies)</span></li>
+            <li><b>Adapts conversations to one of three hotel segments</b>
+              <span>Efficient · Premium · Luxury (tone, pace, and guest expectations)</span></li>
+            <li><b>Secures and manages bookings</b> within the hotel's systems
+              <span>without disrupting front‑desk workflows</span></li>
+            <li><b>Supports optional add‑ons</b>
+              <span>for more premium conversations (recognition, special occasions, escalation rules)</span></li>
+            <li><b>Captures post‑stay guest feedback</b>
+              <span>via reviews and/or internal feedback channels</span></li>
+          </ul>
+        </section>
+
+        <!-- NEW SECTION: Implementation Timeline -->
+        <section class="card">
+          <h2>Implementation timeline</h2>
+          <ul class="bullets">
+            <li><b>Week 1-2:</b> Integration setup <span>(phone routing, PMS connection, brand voice)</span></li>
+            <li><b>Week 3:</b> Testing & training <span>(staff orientation, scenario refinement)</span></li>
+            <li><b>Week 4:</b> Soft launch <span>(after-hours only, monitored)</span></li>
+            <li><b>60-day pilot begins</b> <span>(full measurement period)</span></li>
+          </ul>
+          <p class="note">
+            <b>4 weeks to operational</b> vs 6-12 months for enterprise voice AI competitors (PolyAI, Volara, etc.).
+          </p>
+        </section>
+
+        <!-- UPDATED SECTION: Why voice AI now -->
+        <section class="card">
+          <h2>Why voice AI now (2025 market reality)</h2>
+          <ul class="bullets">
+            <li><b>78% of hoteliers prefer AI as staff augmentation</b> vs replacement
+              <span>h2c Global AI Study 2025 — aligns with "help staff, don't replace" positioning</span></li>
+            <li><b>14% of hotel demand now goes to short-term rentals</b>
+              <span>Revenue Matters Jan 2025 — direct booking excellence is defensive strategy</span></li>
+            <li><b>15-25% of direct bookings happen via phone</b> — underserved channel
+              <span>Shiji Distribution Chart 2025 — yet most hotels have no after-hours coverage</span></li>
+            <li><b>Technology adoption INCREASES satisfaction (+68 points)</b>
+              <span>J.D. Power 2025 — when done right, guests prefer tech-enabled service</span></li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Responsibilities</h2>
+          <ul class="bullets">
+            <li><b>Brantas:</b> introductions · relationships · pipeline</li>
+            <li><b>OWLERA:</b> platform · integration · operations · reporting</li>
+          </ul>
+        </section>
+
+        <!-- UPDATED SECTION: Partner Revenue Examples -->
+        <section class="card">
+          <h2>Partner revenue examples</h2>
+
+          <div style="margin-bottom:4mm;">
+            <p style="margin:0 0 2mm 0; font-size:10px; color:var(--muted); font-weight:700;">Conservative scenario</p>
+            <div class="metric" style="padding:2mm 0;">
+              <div class="label">30 properties @ Partial<br/>($199 + avg $250 commission)<br/>= $449/mo × 20%</div>
+              <div class="value" style="font-size:20px;">$2,694/mo</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:4mm; padding-top:3mm; border-top:1px solid var(--rule);">
+            <p style="margin:0 0 2mm 0; font-size:10px; color:var(--muted); font-weight:700;">Ambitious scenario</p>
+            <div class="metric" style="padding:2mm 0;">
+              <div class="label">50 properties (30 Partial + 20 Full)<br/>Mixed avg $550/mo × 20%</div>
+              <div class="value">$5,500/mo</div>
+            </div>
+          </div>
+
+          <p class="note">
+            Recurring. Portfolio terms available for multi-property groups (volume pricing + tiered partner share).
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="cta">
+        <b>Next step:</b> nominate 1 pilot property (or 1 flagship + 1 overflow).
+        OWLERA runs Partial Intelligence for 60 days. Joint review → continue, expand, or conclude.
+      </div>
+      <div class="contact">
+        <b>Joffrey Costello · OWLERA</b><br/>
+        joffrey@costegief.com<br/>
+        Auckland, New Zealand
+      </div>
+    </div>
+  </div>
+</body>
+</html>
